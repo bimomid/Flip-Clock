@@ -1,4 +1,6 @@
 {
+  // 强制推荐 pnpm
+  "npm.packageManager": "pnpm",
   // ===================== 编辑器核心设置 =====================
   "editor.fontSize": 15, // 编辑器字体大小设置为15
   "editor.lineHeight": 1.5, // 编辑器行高1.5
@@ -22,9 +24,6 @@
   "editor.minimap.scale": 1, // 迷你地图缩放比例为1倍
   "editor.guides.bracketPairs": true, // 显示括号匹配引导线
   "editor.bracketPairColorization.enabled": true, // 开启括号彩色区分
-  "editor.rulers": [
-    100
-  ], // 在100个字符位置显示垂直标尺线
   // ===================== 自动闭合括号/引号（你的专属需求） =====================
   "editor.autoClosingBrackets": "beforeWhitespace", // 仅在空白符前自动闭合括号
   "editor.autoClosingDelete": "always", // 自动删除匹配的括号/引号

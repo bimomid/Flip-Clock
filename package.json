@@ -4,21 +4,77 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "lint": "pnpm run lint:eslint && pnpm run lint:prettier && pnpm run lint:stylelint",
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "preinstall": "npx only-allow pnpm",
+    "lint:eslint": "eslint --cache \"src/**/*.{vue,ts,js}\" --fix",
+    "lint:prettier": "prettier --write \"**/*.{js,cjs,ts,json,css,scss,vue,html,md}\"",
+    "lint:stylelint": "stylelint --cache \"**/*.{css,scss,vue}\" --fix",
+    "lint:lint-staged": "lint-staged",
+    "prepare": "husky",
+    "commit": "git-cz"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-git"
+    }
+  },
+  "lint-staged": {
+    "*.{js,ts}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{cjs,json}": [
+      "prettier --write"
+    ],
+    "*.{vue,html}": [
+      "eslint --fix",
+      "prettier --write",
+      "stylelint --fix"
+    ],
+    "*.{scss,css}": [
+      "stylelint --fix",
+      "prettier --write"
+    ],
+    "*.md": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
-    "vue": "^3.5.33",
     "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2"
+    "@tauri-apps/plugin-opener": "^2",
+    "vue": "^3.5.33"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "@eslint/js": "^10.0.1",
+    "@tauri-apps/cli": "^2",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
     "@vitejs/plugin-vue": "^6.0.6",
+    "commitizen": "^4.3.1",
+    "cz-git": "^1.13.0",
+    "eslint": "^10.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-vue": "^10.9.0",
+    "globals": "^17.6.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "postcss-html": "^1.8.1",
+    "prettier": "^3.8.3",
+    "sass": "^1.99.0",
+    "stylelint": "^17.11.0",
+    "stylelint-config-recess-order": "^7.7.0",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-scss": "^7.0.0",
     "typescript": "~6.0.3",
+    "typescript-eslint": "^8.59.2",
     "vite": "^8.0.10",
-    "vue-tsc": "^3.2.8",
-    "@tauri-apps/cli": "^2"
+    "vue-tsc": "^3.2.8"
   }
 }

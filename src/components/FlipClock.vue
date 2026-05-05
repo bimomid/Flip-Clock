@@ -15,7 +15,7 @@
             class="digit"
             :class="{
               current: currentDigits[digitIndex] === digitValue,
-              previous: isAnimating[digitIndex] && previousDigits[digitIndex] === digitValue
+              previous: isAnimating[digitIndex] && previousDigits[digitIndex] === digitValue,
             }"
           >
             <div class="upper">
@@ -34,28 +34,30 @@
 </template>
 
 <script lang="ts">
-const digitMaxValues = [2, 9, 5, 9, 5, 9] as const
+const digitMaxValues = [2, 9, 5, 9, 5, 9] as const;
 const digitGroups = [
   [0, 1],
   [2, 3],
-  [4, 5]
-] as const
-const digitRanges = digitMaxValues.map((max) => Array.from({ length: max + 1 }, (_, index) => index))
+  [4, 5],
+] as const;
+const digitRanges = digitMaxValues.map((max) =>
+  Array.from({ length: max + 1 }, (_, index) => index)
+);
 </script>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
-const currentDigits = ref(getDigitsFromTime())
-const previousDigits = ref([...currentDigits.value])
-const isAnimating = ref([false, false, false, false, false, false])
+const currentDigits = ref(getDigitsFromTime());
+const previousDigits = ref([...currentDigits.value]);
+const isAnimating = ref([false, false, false, false, false, false]);
 
-let timer: ReturnType<typeof setTimeout> | null = null
+let timer: ReturnType<typeof setTimeout> | null = null;
 
 function getDigitsFromTime(now = new Date()): number[] {
-  const hours = now.getHours()
-  const minutes = now.getMinutes()
-  const seconds = now.getSeconds()
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
 
   return [
     Math.floor(hours / 10),
@@ -63,72 +65,72 @@ function getDigitsFromTime(now = new Date()): number[] {
     Math.floor(minutes / 10),
     minutes % 10,
     Math.floor(seconds / 10),
-    seconds % 10
-  ]
+    seconds % 10,
+  ];
 }
 
 function updateDigitValue(digitIndex: number, nextDigit: number) {
-  const currentDigit = currentDigits.value[digitIndex]
-  const changed = nextDigit !== currentDigit
+  const currentDigit = currentDigits.value[digitIndex];
+  const changed = nextDigit !== currentDigit;
 
-  isAnimating.value[digitIndex] = changed
+  isAnimating.value[digitIndex] = changed;
   if (changed) {
-    previousDigits.value[digitIndex] = currentDigit
-    currentDigits.value[digitIndex] = nextDigit
+    previousDigits.value[digitIndex] = currentDigit;
+    currentDigits.value[digitIndex] = nextDigit;
   }
 }
 
 function syncDigitsWithTime(now = new Date()) {
-  const hours = now.getHours()
-  const minutes = now.getMinutes()
-  const seconds = now.getSeconds()
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
 
-  updateDigitValue(0, Math.floor(hours / 10))
-  updateDigitValue(1, hours % 10)
-  updateDigitValue(2, Math.floor(minutes / 10))
-  updateDigitValue(3, minutes % 10)
-  updateDigitValue(4, Math.floor(seconds / 10))
-  updateDigitValue(5, seconds % 10)
+  updateDigitValue(0, Math.floor(hours / 10));
+  updateDigitValue(1, hours % 10);
+  updateDigitValue(2, Math.floor(minutes / 10));
+  updateDigitValue(3, minutes % 10);
+  updateDigitValue(4, Math.floor(seconds / 10));
+  updateDigitValue(5, seconds % 10);
 }
 
 function scheduleNextTick() {
-  if (document.hidden) return
-  const delay = 1000 - (Date.now() % 1000)
-  timer = setTimeout(tick, delay || 1000)
+  if (document.hidden) return;
+  const delay = 1000 - (Date.now() % 1000);
+  timer = setTimeout(tick, delay || 1000);
 }
 
 function tick() {
-  timer = null
-  if (document.hidden) return
-  syncDigitsWithTime()
-  scheduleNextTick()
+  timer = null;
+  if (document.hidden) return;
+  syncDigitsWithTime();
+  scheduleNextTick();
 }
 
 function stopTimer() {
   if (timer) {
-    clearTimeout(timer)
-    timer = null
+    clearTimeout(timer);
+    timer = null;
   }
 }
 
 function handleVisibilityChange() {
   if (document.hidden) {
-    stopTimer()
-    return
+    stopTimer();
+    return;
   }
-  syncDigitsWithTime()
-  if (!timer) scheduleNextTick()
+  syncDigitsWithTime();
+  if (!timer) scheduleNextTick();
 }
 
 onMounted(() => {
-  handleVisibilityChange()
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-})
+  handleVisibilityChange();
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+});
 
 onBeforeUnmount(() => {
-  document.removeEventListener('visibilitychange', handleVisibilityChange)
-  stopTimer()
-})
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
+  stopTimer();
+});
 </script>
 
 <style scoped>
@@ -147,11 +149,11 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: nowrap;
   gap: var(--group-gap);
+  align-items: center;
+  justify-content: center;
   width: max-content;
   min-width: max-content;
   max-width: 100vw;
-  align-items: center;
-  justify-content: center;
   margin: 0 auto;
 }
 
@@ -160,49 +162,49 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   gap: var(--digit-gap);
   padding: var(--panel-padding-y) var(--panel-padding-x);
+  background: linear-gradient(180deg, rgb(35 35 39 / 95%) 0%, rgb(28 28 32 / 95%) 100%);
   border-radius: var(--panel-radius);
-  background: linear-gradient(180deg, rgba(35, 35, 39, 0.95) 0%, rgba(28, 28, 32, 0.95) 100%);
-  box-shadow: 0 clamp(14px, 1.6vw, 24px) clamp(26px, 3.2vw, 48px) rgba(0, 0, 0, 0.35);
+  box-shadow: 0 clamp(14px, 1.6vw, 24px) clamp(26px, 3.2vw, 48px) rgb(0 0 0 / 35%);
 }
 
 .separator {
+  display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
   width: var(--separator-width);
   height: calc(var(--digit-height) * 0.78);
   margin-inline: calc(var(--digit-width) * -0.02);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  align-items: center;
 }
 
 .separator::before,
 .separator::after {
-  content: '';
   width: var(--separator-dot-size);
   height: var(--separator-dot-size);
-  border-radius: 50%;
+  content: "";
   background-color: var(--separator-color);
+  border-radius: 50%;
 }
 
 .flipper {
   position: relative;
   width: var(--digit-width);
   height: var(--digit-height);
+  padding: 0;
+  margin: 0;
   font-size: calc(var(--digit-width) * 1.42);
   font-weight: bold;
   line-height: calc(var(--digit-height) - 4px);
   border-radius: calc(var(--digit-width) * 0.12);
-  box-shadow: 0 clamp(8px, 1vw, 16px) clamp(18px, 2vw, 32px) rgba(0, 0, 0, 0.35);
-  margin: 0;
-  padding: 0;
+  box-shadow: 0 clamp(8px, 1vw, 16px) clamp(18px, 2vw, 32px) rgb(0 0 0 / 35%);
 }
 
 .digit {
-  z-index: 1;
   position: absolute;
-  left: 0;
   top: 0;
+  left: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
   perspective: 200px;
@@ -216,9 +218,9 @@ onBeforeUnmount(() => {
 
 .upper,
 .lower {
-  z-index: 1;
   position: absolute;
   left: 0;
+  z-index: 1;
   width: 100%;
   height: 50%;
   overflow: hidden;
@@ -227,24 +229,24 @@ onBeforeUnmount(() => {
 }
 
 .upper {
-  transform-origin: 50% 100%;
   top: 0;
+  transform-origin: 50% 100%;
 }
 
 .upper::after {
-  content: '';
   position: absolute;
   top: calc(var(--digit-height) / 2 - 1px);
   left: 0;
   z-index: 5;
   width: 100%;
   height: 2px;
-  background-color: rgba(0, 0, 0, 0.4);
+  content: "";
+  background-color: rgb(0 0 0 / 40%);
 }
 
 .lower {
-  transform-origin: 50% 0;
   bottom: 0;
+  transform-origin: 50% 0;
   transition: opacity 0.3s;
 }
 
@@ -254,11 +256,13 @@ onBeforeUnmount(() => {
   z-index: 1;
   width: 100%;
   height: 200%;
-  font-family: 'Cascadia Code', 'Cascadia Mono', 'Roboto Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-family:
+    "Cascadia Code", "Cascadia Mono", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
   font-variant-numeric: tabular-nums;
   color: #ccc;
-  text-shadow: 0 1px 2px #000;
   text-align: center;
+  text-shadow: 0 1px 2px #000;
   background-color: #333;
   border-radius: calc(var(--digit-width) * 0.12);
 }
@@ -276,8 +280,8 @@ onBeforeUnmount(() => {
 }
 
 .animating .digit.current {
-  animation: z-index-jump 0.5s 0.5s linear both;
   z-index: 2;
+  animation: z-index-jump 0.5s 0.5s linear both;
 }
 
 .animating .digit.previous .upper {
@@ -292,9 +296,9 @@ onBeforeUnmount(() => {
 
 .shadow {
   position: absolute;
+  z-index: 2;
   width: 100%;
   height: 100%;
-  z-index: 2;
   will-change: opacity;
 }
 
@@ -310,37 +314,65 @@ onBeforeUnmount(() => {
 
 .animating .digit.previous .upper .shadow,
 .animating .digit.current .upper .shadow {
-  background: linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 1) 100%);
+  background: linear-gradient(rgb(0 0 0 / 10%) 0%, rgb(0 0 0 / 100%) 100%);
 }
 
 .animating .digit.previous .lower .shadow,
 .animating .digit.current .lower .shadow {
-  background: linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.1) 100%);
+  background: linear-gradient(rgb(0 0 0 / 100%) 0%, rgb(0 0 0 / 10%) 100%);
 }
 
 @keyframes turn-down {
-  0% { transform: rotateX(90deg); }
-  100% { transform: rotateX(0deg); }
+  0% {
+    transform: rotateX(90deg);
+  }
+
+  100% {
+    transform: rotateX(0deg);
+  }
 }
 
 @keyframes turn-up {
-  0% { transform: rotateX(0deg); }
-  100% { transform: rotateX(-90deg); }
+  0% {
+    transform: rotateX(0deg);
+  }
+
+  100% {
+    transform: rotateX(-90deg);
+  }
 }
 
 @keyframes z-index-jump {
-  0% { z-index: 2; }
-  5% { z-index: 4; }
-  100% { z-index: 4; }
+  0% {
+    z-index: 2;
+  }
+
+  5% {
+    z-index: 4;
+  }
+
+  100% {
+    z-index: 4;
+  }
 }
 
 @keyframes show {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes hide {
-  0% { opacity: 1; }
-  100% { opacity: 0; }
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 </style>
