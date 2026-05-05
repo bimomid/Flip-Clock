@@ -1,18 +1,24 @@
 ```
-pnpm create tauri-app
+pnpm add -D husky lint-staged @commitlint/cli @commitlint/config-conventional cz-git commitizen
+```
 
-cd Flip-Clock
+```
+npx husky init
+```
 
-git init
+```
+pnpm add -D prettier eslint @eslint/js eslint-plugin-vue @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-prettier
+```
 
-pnpm install
+```
+pnpm create @eslint/config@latest
+```
 
-pnpm tauri android init
+```
+pnpm add -D sass stylelint stylelint-config-standard stylelint-config-recess-order stylelint-scss postcss-html
+```
 
-pnpm tauri dev
-
-pnpm tauri android dev
-
+```
 npx npm-check-updates
 
 npx npm-check-updates -u

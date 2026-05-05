@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import FlipClock from './components/FlipClock.vue'
+import FlipClock from "@/components/FlipClock.vue";
 </script>
 
 <style scoped>
