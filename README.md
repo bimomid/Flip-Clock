@@ -1,7 +1,19 @@
-# Tauri + Vue + TypeScript
+```
+pnpm create tauri-app
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+cd Flip-Clock
 
-## Recommended IDE Setup
+git init
 
-- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+pnpm install
+
+pnpm tauri android init
+
+pnpm tauri dev
+
+pnpm tauri android dev
+
+npx npm-check-updates
+
+npx npm-check-updates -u
+```
