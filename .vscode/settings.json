@@ -1,0 +1,74 @@
+{
+  // ===================== 编辑器核心设置 =====================
+  "editor.fontSize": 15, // 编辑器字体大小设置为15
+  "editor.lineHeight": 1.5, // 编辑器行高1.5
+  "editor.fontFamily": "Consolas, 'Courier New', monospace", // 编辑器默认等宽字体
+  "editor.fontLigatures": true, // 开启字体连字效果，提升代码可读性
+  "editor.cursorBlinking": "smooth", // 光标闪烁样式：扩展式
+  "editor.cursorSmoothCaretAnimation": "on", // 开启光标平滑移动动画
+  "editor.wordWrap": "on", // 开启代码自动换行
+  "editor.smoothScrolling": true, // 开启编辑器平滑滚动
+  "workbench.list.smoothScrolling": true, // 开启侧边栏列表平滑滚动
+  "editor.mouseWheelZoom": true, // 按住Ctrl+鼠标滚轮缩放字体大小
+  "editor.formatOnSave": true, // 保存文件时自动格式化代码
+  "editor.formatOnPaste": true, // 粘贴代码时自动格式化
+  "editor.formatOnType": false, // 输入代码时不自动格式化
+  "editor.tabSize": 2, // 缩进为2个空格
+  "editor.insertSpaces": true, // 使用空格替代Tab制表符
+  "editor.detectIndentation": false, // 关闭自动检测缩进，强制统一格式
+  "editor.renderWhitespace": "all", // 显示所有空白字符，方便代码调试
+  "editor.renderLineHighlight": "line", // 高亮显示当前编辑行
+  "editor.minimap.enabled": true, // 开启右侧迷你地图导航
+  "editor.minimap.scale": 1, // 迷你地图缩放比例为1倍
+  "editor.guides.bracketPairs": true, // 显示括号匹配引导线
+  "editor.bracketPairColorization.enabled": true, // 开启括号彩色区分
+  "editor.rulers": [
+    100
+  ], // 在100个字符位置显示垂直标尺线
+  // ===================== 自动闭合括号/引号（你的专属需求） =====================
+  "editor.autoClosingBrackets": "beforeWhitespace", // 仅在空白符前自动闭合括号
+  "editor.autoClosingDelete": "always", // 自动删除匹配的括号/引号
+  "editor.autoClosingOvertype": "always", // 覆盖输入时自动闭合符号
+  "editor.autoClosingQuotes": "beforeWhitespace", // 仅在空白符前自动闭合引号
+  // ===================== 文件处理设置 =====================
+  "files.autoSave": "onWindowChange", // 窗口失去焦点时自动保存文件
+  "files.autoSaveDelay": 800, // 自动保存延迟时间800毫秒
+  "files.encoding": "utf8", // 默认文件编码格式为UTF-8
+  "files.eol": "\n", // 统一换行符为LF，解决跨平台兼容问题
+  "files.trimTrailingWhitespace": true, // 保存时自动删除行尾多余空格
+  "files.insertFinalNewline": true, // 保存时在文件末尾自动添加空行
+  "files.autoGuessEncoding": true, // 自动识别文件编码格式
+  "files.exclude": { // 资源管理器中隐藏指定的文件/文件夹
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/target": true,
+    "**/.vscode/extensions": true,
+    "**/.vscode/settings.json": false // 显示工作区配置文件
+  },
+  // ===================== 窗口/界面设置 =====================
+  "window.density.editorTabHeight": "compact", // 压缩编辑器标签栏高度
+  // ===================== 资源管理器/笔记本 =====================
+  "explorer.compactFolders": true, // 开启文件夹紧凑模式
+  "notebook.compactView": true, // 开启笔记本紧凑视图
+  "explorer.confirmDelete": true, // 删除文件时弹出确认提示框
+  "explorer.confirmDragAndDrop": true, // 拖拽文件时弹出确认提示框
+  "explorer.sortOrder": "type", // 资源管理器按文件类型排序
+  // ===================== 终端配置 =====================
+  "terminal.integrated.fontSize": 14, // 内置终端字体大小14
+  "terminal.integrated.fontFamily": "Consolas", // 终端默认等宽字体
+  "terminal.integrated.defaultProfile.windows": "PowerShell", // Windows系统默认终端为PowerShell
+  "terminal.integrated.tabs.enabled": true, // 开启终端多标签页功能
+  "terminal.integrated.scrollback": 5000, // 终端最大回滚显示行数5000
+  "terminal.integrated.shellIntegration.enabled": true, // 开启终端Shell集成功能
+  // ===================== 语言特定设置 =====================
+  "js/ts.updateImportsOnFileMove.enabled": "always", // 移动JS/TS文件时自动更新导入路径
+  "html.format.indentInnerHtml": true, // HTML标签内部代码自动缩进
+  "html.format.wrapLineLength": 100, // HTML代码自动换行长度100字符
+  "json.format.enable": true, // 开启JSON代码格式化功能
+}
