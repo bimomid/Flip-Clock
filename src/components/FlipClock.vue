@@ -79,16 +79,7 @@ function updateDigitValue(digitIndex: number, nextDigit: number) {
 }
 
 function syncDigitsWithTime(now = new Date()) {
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
-
-  updateDigitValue(0, Math.floor(hours / 10));
-  updateDigitValue(1, hours % 10);
-  updateDigitValue(2, Math.floor(minutes / 10));
-  updateDigitValue(3, minutes % 10);
-  updateDigitValue(4, Math.floor(seconds / 10));
-  updateDigitValue(5, seconds % 10);
+  getDigitsFromTime(now).forEach((digit, index) => updateDigitValue(index, digit));
 }
 
 function scheduleNextTick() {
@@ -142,12 +133,12 @@ onBeforeUnmount(() => {
   --group-gap: calc(var(--digit-width) * 0.1);
   --separator-width: calc(var(--digit-width) * 0.16);
   --separator-dot-size: calc(var(--digit-width) * 0.14);
-  --separator-color: #333;
-  --panel-top-color: rgb(35 35 39 / 95%);
-  --panel-bottom-color: rgb(28 28 32 / 95%);
-  --digit-bg-color: #333;
-  --digit-text-color: #ccc;
-  --digit-divider-color: rgb(0 0 0 / 40%);
+  --separator-color: var(--flip-separator);
+  --panel-top-color: var(--flip-panel-top);
+  --panel-bottom-color: var(--flip-panel-bottom);
+  --digit-bg-color: var(--flip-digit-bg);
+  --digit-text-color: var(--flip-digit-text);
+  --digit-divider-color: var(--flip-divider);
 
   display: flex;
   flex-wrap: nowrap;

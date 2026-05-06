@@ -29,4 +29,5 @@ dist-ssr
 .stylelintcache
 
 .agents
+.claude
 skills-lock.json
