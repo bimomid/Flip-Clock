@@ -1,15 +1,19 @@
 <template>
   <main class="home-page-contain">
-    <IconDock class="home-page-toolbar-top-right" :icons="topRightIcons" />
+    <div class="home-page-toolbar-top-right">
+      <IconDock :icons="topRightIcons" />
+      <ColorPalette :visible="showPalette" @close="showPalette = false" />
+    </div>
     <IconDock class="home-page-toolbar-bottom-left" :icons="bottomLeftIcons" />
     <FlipClock />
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed, inject } from "vue";
+import { computed, inject, ref } from "vue";
 import FlipClock from "@/components/FlipClock.vue";
 import IconDock from "@/components/IconDock.vue";
+import ColorPalette from "@/components/ColorPalette.vue";
 import settingsSvg from "@/assets/Func-Settings.svg?raw";
 import darkSvg from "@/assets/Model-Dark.svg?raw";
 import lightSvg from "@/assets/Model-Light.svg?raw";
@@ -27,6 +31,8 @@ if (!theme) {
 
 const { isDark, toggleThemeWithTransition } = theme;
 
+const showPalette = ref(false);
+
 const topRightIcons = computed(() => [
   {
     id: "theme",
@@ -36,7 +42,14 @@ const topRightIcons = computed(() => [
       toggleThemeWithTransition({ x: event.clientX, y: event.clientY });
     },
   },
-  { id: "palette", svg: paletteSvg, color: "var(--theme-icon-palette)" },
+  {
+    id: "palette",
+    svg: paletteSvg,
+    color: "var(--theme-icon-palette)",
+    onClick: () => {
+      showPalette.value = !showPalette.value;
+    },
+  },
 ]);
 
 const bottomLeftIcons = [{ id: "settings", svg: settingsSvg, color: "var(--theme-icon-settings)" }];

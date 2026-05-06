@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import { onMounted, provide, ref } from "vue";
+import { useThemeColors, type ThemeColorsContext } from "@/composables/useThemeColors";
 
 type ThemePoint = {
   x: number;
@@ -71,8 +72,12 @@ provide<ThemeContext>("theme", {
   toggleThemeWithTransition,
 });
 
+const themeColors = useThemeColors(isDark);
+provide<ThemeColorsContext>("theme-colors", themeColors);
+
 onMounted(() => {
   initTheme();
+  themeColors.init();
 });
 </script>
 

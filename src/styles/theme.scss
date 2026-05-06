@@ -29,6 +29,12 @@
   --app-text: hsl(var(--s-h) calc(var(--s-s) * 0.15) calc(100% - var(--p-l)));
   --dock-item-color: hsl(var(--s-h) calc(var(--s-s) * 0.1) calc(100% - var(--p-l) + 22%));
   --dock-item-color-hover: hsl(var(--s-h) calc(var(--s-s) * 0.12) calc(100% - var(--p-l) + 12%));
+  --flip-panel-top: hsl(var(--p-h) var(--p-s) 12%);
+  --flip-panel-bottom: hsl(var(--p-h) var(--p-s) 6%);
+  --flip-digit-bg: hsl(var(--p-h) var(--p-s) 22%);
+  --flip-digit-text: hsl(var(--s-h) 60% 85%);
+  --flip-separator: hsl(var(--s-h) var(--s-s) 60%);
+  --flip-divider: hsl(var(--p-h) var(--p-s) 3% / 50%);
 }
 
 [data-theme="dark"] {
@@ -55,4 +61,10 @@
   --app-text: hsl(var(--s-h) calc(var(--s-s) * 0.3) calc(100% - var(--p-l)));
   --dock-item-color: hsl(var(--s-h) calc(var(--s-s) * 0.3) calc(100% - var(--p-l) - 10%));
   --dock-item-color-hover: hsl(var(--s-h) calc(var(--s-s) * 0.2) calc(100% - var(--p-l) - 4%));
+  --flip-panel-top: hsl(var(--p-h) calc(var(--p-s) + 10%) 6%);
+  --flip-panel-bottom: hsl(var(--p-h) calc(var(--p-s) + 10%) 3%);
+  --flip-digit-bg: hsl(var(--p-h) calc(var(--p-s) + 10%) 14%);
+  --flip-digit-text: hsl(var(--s-h) 50% 80%);
+  --flip-separator: hsl(var(--s-h) var(--s-s) 50%);
+  --flip-divider: hsl(var(--p-h) calc(var(--p-s) + 10%) 1% / 50%);
 }
