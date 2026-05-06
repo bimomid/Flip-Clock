@@ -1,16 +1,10 @@
 <template>
-  <main class="container">
-    <FlipClock />
-  </main>
+  <ChangeTheme>
+    <RouterView />
+  </ChangeTheme>
 </template>
 
 <script setup lang="ts">
-import FlipClock from "@/components/FlipClock.vue";
+import { RouterView } from "vue-router";
+import ChangeTheme from "@/components/ChangeTheme.vue";
 </script>
-
-<style scoped>
-.container {
-  display: flex;
-  min-height: 100vh;
-}
-</style>

@@ -1,0 +1,58 @@
+*,
+*::before,
+*::after {
+  padding: 0;
+  margin: 0;
+}
+
+:root {
+  --p-h: 40;
+  --p-s: 28%;
+  --p-l: 95%;
+
+  /* primary: hsl(40, 28%, 95%) */
+
+  --s-h: 36;
+  --s-s: 90%;
+  --s-l: 50%;
+
+  /* secondary: hsl(36, 90%, 50%) */
+
+  color-scheme: light;
+
+  --app-bg: hsl(var(--p-h) var(--p-s) var(--p-l));
+  --dock-bg: hsl(var(--p-h) var(--p-s) calc(var(--p-l) - 4%));
+  --dock-item-bg: hsl(var(--p-h) calc(var(--p-s) - 14%) calc(var(--p-l) + 2%));
+  --dock-border: hsl(var(--p-h) calc(var(--p-s) - 10%) calc(var(--p-l) - 12%));
+  --dock-item-border: hsl(var(--p-h) calc(var(--p-s) - 14%) calc(var(--p-l) - 10%));
+  --dock-item-border-hover: hsl(var(--s-h) var(--s-s) var(--s-l));
+  --app-text: hsl(var(--s-h) calc(var(--s-s) * 0.15) calc(100% - var(--p-l)));
+  --dock-item-color: hsl(var(--s-h) calc(var(--s-s) * 0.1) calc(100% - var(--p-l) + 22%));
+  --dock-item-color-hover: hsl(var(--s-h) calc(var(--s-s) * 0.12) calc(100% - var(--p-l) + 12%));
+}
+
+[data-theme="dark"] {
+  --p-h: 221;
+  --p-s: 14%;
+  --p-l: 18%;
+
+  /* Primary: hsl(221, 14%, 18%) */
+
+  --s-h: 18;
+  --s-s: 30%;
+  --s-l: 54%;
+
+  /* Secondary: hsl(18, 30%, 54%) */
+
+  color-scheme: dark;
+
+  --app-bg: hsl(var(--p-h) var(--p-s) var(--p-l));
+  --dock-bg: hsl(var(--p-h) var(--p-s) calc(var(--p-l) - 4%));
+  --dock-item-bg: hsl(var(--p-h) calc(var(--p-s) + 2%) calc(var(--p-l) + 3%));
+  --dock-border: hsl(var(--p-h) calc(var(--p-s) + 14%) calc(var(--p-l) + 14%));
+  --dock-item-border: hsl(var(--p-h) calc(var(--p-s) + 12%) calc(var(--p-l) + 12%));
+  --dock-item-border-hover: hsl(var(--s-h) var(--s-s) var(--s-l));
+  --app-text: hsl(var(--s-h) calc(var(--s-s) * 0.3) calc(100% - var(--p-l)));
+  --dock-item-color: hsl(var(--s-h) calc(var(--s-s) * 0.3) calc(100% - var(--p-l) - 10%));
+  --dock-item-color-hover: hsl(var(--s-h) calc(var(--s-s) * 0.2) calc(100% - var(--p-l) - 4%));
+}
