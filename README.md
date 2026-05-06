@@ -1,25 +1,3 @@
-```
-pnpm add -D husky lint-staged @commitlint/cli @commitlint/config-conventional cz-git commitizen
-```
+# 图标栏
 
-```
-npx husky init
-```
-
-```
-pnpm add -D prettier eslint @eslint/js eslint-plugin-vue @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint-config-prettier eslint-plugin-prettier
-```
-
-```
-pnpm create @eslint/config@latest
-```
-
-```
-pnpm add -D sass stylelint stylelint-config-standard stylelint-config-recess-order stylelint-scss postcss-html
-```
-
-```
-npx npm-check-updates
-
-npx npm-check-updates -u
-```
+这次就简单的增加右上图标栏和左下图标栏

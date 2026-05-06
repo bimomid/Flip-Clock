@@ -19,11 +19,9 @@
             }"
           >
             <div class="upper">
-              <div class="shadow"></div>
               <div class="digit-char">{{ digitValue }}</div>
             </div>
             <div class="lower">
-              <div class="shadow"></div>
               <div class="digit-char">{{ digitValue }}</div>
             </div>
           </div>
@@ -145,6 +143,11 @@ onBeforeUnmount(() => {
   --separator-width: calc(var(--digit-width) * 0.16);
   --separator-dot-size: calc(var(--digit-width) * 0.14);
   --separator-color: #333;
+  --panel-top-color: rgb(35 35 39 / 95%);
+  --panel-bottom-color: rgb(28 28 32 / 95%);
+  --digit-bg-color: #333;
+  --digit-text-color: #ccc;
+  --digit-divider-color: rgb(0 0 0 / 40%);
 
   display: flex;
   flex-wrap: nowrap;
@@ -152,7 +155,6 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   width: max-content;
-  min-width: max-content;
   max-width: 100vw;
   margin: 0 auto;
 }
@@ -162,9 +164,8 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   gap: var(--digit-gap);
   padding: var(--panel-padding-y) var(--panel-padding-x);
-  background: linear-gradient(180deg, rgb(35 35 39 / 95%) 0%, rgb(28 28 32 / 95%) 100%);
+  background: linear-gradient(180deg, var(--panel-top-color) 0%, var(--panel-bottom-color) 100%);
   border-radius: var(--panel-radius);
-  box-shadow: 0 clamp(14px, 1.6vw, 24px) clamp(26px, 3.2vw, 48px) rgb(0 0 0 / 35%);
 }
 
 .separator {
@@ -191,13 +192,10 @@ onBeforeUnmount(() => {
   position: relative;
   width: var(--digit-width);
   height: var(--digit-height);
-  padding: 0;
-  margin: 0;
   font-size: calc(var(--digit-width) * 1.42);
   font-weight: bold;
   line-height: calc(var(--digit-height) - 4px);
   border-radius: calc(var(--digit-width) * 0.12);
-  box-shadow: 0 clamp(8px, 1vw, 16px) clamp(18px, 2vw, 32px) rgb(0 0 0 / 35%);
 }
 
 .digit {
@@ -207,12 +205,10 @@ onBeforeUnmount(() => {
   z-index: 1;
   width: 100%;
   height: 100%;
-  perspective: 200px;
-  transition: opacity 0.3s;
+  perspective: calc(var(--digit-height) * 1.8);
 }
 
-.digit.current,
-.digit:first-child {
+.digit.current {
   z-index: 2;
 }
 
@@ -241,13 +237,12 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 2px;
   content: "";
-  background-color: rgb(0 0 0 / 40%);
+  background-color: var(--digit-divider-color);
 }
 
 .lower {
   bottom: 0;
   transform-origin: 50% 0;
-  transition: opacity 0.3s;
 }
 
 .digit-char {
@@ -260,10 +255,9 @@ onBeforeUnmount(() => {
     "Cascadia Code", "Cascadia Mono", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
   font-variant-numeric: tabular-nums;
-  color: #ccc;
+  color: var(--digit-text-color);
   text-align: center;
-  text-shadow: 0 1px 2px #000;
-  background-color: #333;
+  background-color: var(--digit-bg-color);
   border-radius: calc(var(--digit-width) * 0.12);
 }
 
@@ -280,7 +274,6 @@ onBeforeUnmount(() => {
 }
 
 .animating .digit.current {
-  z-index: 2;
   animation: z-index-jump 0.5s 0.5s linear both;
 }
 
@@ -292,34 +285,6 @@ onBeforeUnmount(() => {
 .animating .digit.current .lower {
   z-index: 2;
   animation: turn-down 0.5s 0.5s linear both;
-}
-
-.shadow {
-  position: absolute;
-  z-index: 2;
-  width: 100%;
-  height: 100%;
-  will-change: opacity;
-}
-
-.animating .digit.previous .upper .shadow,
-.animating .digit.previous .lower .shadow {
-  animation: show 0.5s linear both;
-}
-
-.animating .digit.current .upper .shadow,
-.animating .digit.current .lower .shadow {
-  animation: hide 0.5s 0.3s linear both;
-}
-
-.animating .digit.previous .upper .shadow,
-.animating .digit.current .upper .shadow {
-  background: linear-gradient(rgb(0 0 0 / 10%) 0%, rgb(0 0 0 / 100%) 100%);
-}
-
-.animating .digit.previous .lower .shadow,
-.animating .digit.current .lower .shadow {
-  background: linear-gradient(rgb(0 0 0 / 100%) 0%, rgb(0 0 0 / 10%) 100%);
 }
 
 @keyframes turn-down {
@@ -353,26 +318,6 @@ onBeforeUnmount(() => {
 
   100% {
     z-index: 4;
-  }
-}
-
-@keyframes show {
-  0% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 1;
-  }
-}
-
-@keyframes hide {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
   }
 }
 </style>

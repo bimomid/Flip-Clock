@@ -27,3 +27,6 @@ dist-ssr
 # Linter cache files
 .eslintcache
 .stylelintcache
+
+.agents
+skills-lock.json
