@@ -28,6 +28,7 @@
         </div>
       </div>
     </template>
+    <div v-if="ampm" class="clock-ampm">{{ ampm }}</div>
   </div>
 </template>
 
@@ -44,16 +45,30 @@ const digitRanges = digitMaxValues.map((max) =>
 </script>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useClockStore } from "@/stores/clock";
+
+const clockStore = useClockStore();
 
 const currentDigits = ref(getDigitsFromTime());
 const previousDigits = ref([...currentDigits.value]);
 const isAnimating = ref([false, false, false, false, false, false]);
 
+const timeRef = ref(new Date());
+
+const ampm = computed(() => {
+  if (clockStore.is24h) return null;
+  return timeRef.value.getHours() >= 12 ? "PM" : "AM";
+});
+
 let timer: ReturnType<typeof setTimeout> | null = null;
 
 function getDigitsFromTime(now = new Date()): number[] {
-  const hours = now.getHours();
+  let hours = now.getHours();
+  if (!clockStore.is24h) {
+    hours = hours % 12;
+    if (hours === 0) hours = 12;
+  }
   const minutes = now.getMinutes();
   const seconds = now.getSeconds();
 
@@ -79,6 +94,7 @@ function updateDigitValue(digitIndex: number, nextDigit: number) {
 }
 
 function syncDigitsWithTime(now = new Date()) {
+  timeRef.value = now;
   getDigitsFromTime(now).forEach((digit, index) => updateDigitValue(index, digit));
 }
 
@@ -112,6 +128,7 @@ function handleVisibilityChange() {
 }
 
 onMounted(() => {
+  clockStore.init();
   handleVisibilityChange();
   document.addEventListener("visibilitychange", handleVisibilityChange);
 });
@@ -126,6 +143,9 @@ onBeforeUnmount(() => {
 .clock-container {
   --digit-width: clamp(34px, min(calc((100vw - 32px) / 8.34), calc((100vh - 84px) / 2.3)), 196px);
   --digit-height: calc(var(--digit-width) * 1.36);
+
+  position: relative;
+
   --digit-gap: calc(var(--digit-width) * 0.14);
   --panel-padding-x: calc(var(--digit-width) * 0.24);
   --panel-padding-y: calc(var(--digit-width) * 0.18);
@@ -148,6 +168,23 @@ onBeforeUnmount(() => {
   width: max-content;
   max-width: 100vw;
   margin: 0 auto;
+}
+
+.clock-ampm {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 10px;
+  font-family:
+    "Cascadia Code", "Cascadia Mono", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  font-size: calc(var(--digit-width) * 0.55);
+  font-weight: 600;
+  color: var(--flip-digit-text);
+  letter-spacing: 0.15em;
+  white-space: nowrap;
+  opacity: 0.6;
+  transform: translateX(-50%);
 }
 
 .digit-group {
