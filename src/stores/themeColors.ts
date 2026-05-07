@@ -1,4 +1,6 @@
-import { computed, ref, watch, type ComputedRef, type Ref } from "vue";
+import { computed, ref, watch } from "vue";
+import { defineStore } from "pinia";
+import { useThemeStore } from "./theme";
 import { type HSL, hslToHex } from "@/utils/color-utils";
 
 interface ColorOverrides {
@@ -11,17 +13,7 @@ interface StoredColors {
   dark: ColorOverrides | null;
 }
 
-export interface ThemeColorsContext {
-  activePrimaryHex: ComputedRef<string>;
-  activeSecondaryHex: ComputedRef<string>;
-  setPrimary: (hsl: HSL) => void;
-  setSecondary: (hsl: HSL) => void;
-  resetCurrentMode: () => void;
-  hasCustom: ComputedRef<boolean>;
-}
-
 const STORAGE_KEY = "flip-clock-colors";
-
 const CSS_PROPS = ["--p-h", "--p-s", "--p-l", "--s-h", "--s-s", "--s-l"] as const;
 
 const LIGHT_DEFAULTS: ColorOverrides = {
@@ -44,32 +36,25 @@ function readStorage(): StoredColors {
   }
 }
 
-function persist(state: StoredColors): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
+export const useThemeColorsStore = defineStore("themeColors", () => {
+  const themeStore = useThemeStore();
 
-export function useThemeColors(isDark: Ref<boolean>) {
   const lightOverrides = ref<ColorOverrides | null>(null);
   const darkOverrides = ref<ColorOverrides | null>(null);
   const ready = ref(false);
 
-  function init() {
-    const stored = readStorage();
-    lightOverrides.value = stored.light;
-    darkOverrides.value = stored.dark;
-    ready.value = true;
-    applyCurrentMode();
-  }
-
-  function persistCurrent() {
-    persist({
-      light: lightOverrides.value,
-      dark: darkOverrides.value,
-    });
+  function persist() {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        light: lightOverrides.value,
+        dark: darkOverrides.value,
+      })
+    );
   }
 
   function applyCurrentMode() {
-    const overrides = isDark.value ? darkOverrides.value : lightOverrides.value;
+    const overrides = themeStore.isDark ? darkOverrides.value : lightOverrides.value;
     const root = document.documentElement;
 
     if (overrides) {
@@ -86,12 +71,20 @@ export function useThemeColors(isDark: Ref<boolean>) {
     }
   }
 
+  function init() {
+    const stored = readStorage();
+    lightOverrides.value = stored.light;
+    darkOverrides.value = stored.dark;
+    ready.value = true;
+    applyCurrentMode();
+  }
+
   const activeOverrides = computed<ColorOverrides | null>(() =>
-    isDark.value ? darkOverrides.value : lightOverrides.value
+    themeStore.isDark ? darkOverrides.value : lightOverrides.value
   );
 
   function currentDefaults(): ColorOverrides {
-    return isDark.value ? DARK_DEFAULTS : LIGHT_DEFAULTS;
+    return themeStore.isDark ? DARK_DEFAULTS : LIGHT_DEFAULTS;
   }
 
   const activePrimaryHex = computed<string>(() => {
@@ -125,42 +118,45 @@ export function useThemeColors(isDark: Ref<boolean>) {
   }
 
   function setPrimary(hsl: HSL) {
-    const overrides = ensureMode(isDark.value ? "dark" : "light");
+    const overrides = ensureMode(themeStore.isDark ? "dark" : "light");
     overrides.primary = hsl;
     applyCurrentMode();
-    persistCurrent();
+    persist();
   }
 
   function setSecondary(hsl: HSL) {
-    const overrides = ensureMode(isDark.value ? "dark" : "light");
+    const overrides = ensureMode(themeStore.isDark ? "dark" : "light");
     overrides.secondary = hsl;
     applyCurrentMode();
-    persistCurrent();
+    persist();
   }
 
   function resetCurrentMode() {
-    if (isDark.value) {
+    if (themeStore.isDark) {
       darkOverrides.value = null;
     } else {
       lightOverrides.value = null;
     }
     applyCurrentMode();
-    persistCurrent();
+    persist();
   }
 
-  watch(isDark, () => {
-    if (ready.value) {
-      applyCurrentMode();
+  watch(
+    () => themeStore.isDark,
+    () => {
+      if (ready.value) {
+        applyCurrentMode();
+      }
     }
-  });
+  );
 
   return {
+    init,
     activePrimaryHex,
     activeSecondaryHex,
+    hasCustom,
     setPrimary,
     setSecondary,
     resetCurrentMode,
-    hasCustom,
-    init,
   };
-}
+});

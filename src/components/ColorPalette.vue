@@ -23,8 +23,8 @@
               <button
                 class="palette-dot palette-dot-reset"
                 title="重置主色调"
-                :disabled="!colors.hasCustom.value"
-                @click="colors.resetCurrentMode()"
+                :disabled="!colorsStore.hasCustom"
+                @click="colorsStore.resetCurrentMode()"
               >
                 <span class="reset-icon">↺</span>
               </button>
@@ -51,8 +51,8 @@
               <button
                 class="palette-dot palette-dot-reset"
                 title="重置副色调"
-                :disabled="!colors.hasCustom.value"
-                @click="colors.resetCurrentMode()"
+                :disabled="!colorsStore.hasCustom"
+                @click="colorsStore.resetCurrentMode()"
               >
                 <span class="reset-icon">↺</span>
               </button>
@@ -67,17 +67,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref } from "vue";
-import type { ThemeColorsContext } from "@/composables/useThemeColors";
+import { computed, ref } from "vue";
+import { useThemeStore } from "@/stores/theme";
+import { useThemeColorsStore } from "@/stores/themeColors";
 import { hexToHSL, hslToHex } from "@/utils/color-utils";
 
 defineProps<{ visible: boolean }>();
 defineEmits<{ close: [] }>();
 
-type ThemeContext = { isDark: { value: boolean } };
-const theme = inject<ThemeContext>("theme")!;
-const colors = inject<ThemeColorsContext>("theme-colors")!;
-const { isDark } = theme;
+const themeStore = useThemeStore();
+const colorsStore = useThemeColorsStore();
 
 const customInput = ref<HTMLInputElement | null>(null);
 const customTarget = ref<"primary" | "secondary">("primary");
@@ -106,8 +105,8 @@ const secondaryPresets: Preset[] = [
 
 // ---- 方法 ----
 
-const primaryL = computed(() => (isDark.value ? 18 : 95));
-const secondaryL = computed(() => (isDark.value ? 54 : 50));
+const primaryL = computed(() => (themeStore.isDark ? 18 : 95));
+const secondaryL = computed(() => (themeStore.isDark ? 54 : 50));
 
 function primaryHex(p: Preset): string {
   return hslToHex(p.h, p.s, primaryL.value);
@@ -117,11 +116,11 @@ function secondaryHex(p: Preset): string {
 }
 
 function onPickPrimary(p: Preset) {
-  colors.setPrimary({ h: p.h, s: p.s, l: primaryL.value });
+  colorsStore.setPrimary({ h: p.h, s: p.s, l: primaryL.value });
 }
 
 function onPickSecondary(p: Preset) {
-  colors.setSecondary({ h: p.h, s: p.s, l: secondaryL.value });
+  colorsStore.setSecondary({ h: p.h, s: p.s, l: secondaryL.value });
 }
 
 function openCustomPicker(target: "primary" | "secondary") {
@@ -134,9 +133,9 @@ function onCustomPick(event: Event) {
   const hsl = hexToHSL(target.value);
   if (!hsl) return;
   if (customTarget.value === "primary") {
-    colors.setPrimary(hsl);
+    colorsStore.setPrimary(hsl);
   } else {
-    colors.setSecondary(hsl);
+    colorsStore.setSecondary(hsl);
   }
 }
 </script>
