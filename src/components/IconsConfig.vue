@@ -8,6 +8,7 @@ import type { DockPosition } from "@/stores/IconsDrag";
 import type { IconConfig } from "@/components/SvgIcon.vue";
 import { useThemeModeStore } from "@/stores/ThemeMode";
 import { useTimeFormatStore } from "@/stores/TimeFormat";
+import { useSoundToggleStore } from "@/stores/SoundToggle";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
 import darkSvg from "@/assets/svg/Model-Dark.svg?raw";
 import lightSvg from "@/assets/svg/Model-Light.svg?raw";
@@ -16,18 +17,21 @@ import time12Svg from "@/assets/svg/Model-12.svg?raw";
 import paletteSvg from "@/assets/svg/Model-Palette.svg?raw";
 import settingsSvg from "@/assets/svg/Model-Settings.svg?raw";
 import loadingSvg from "@/assets/svg/Model-Loading.svg?raw";
+import soundOnSvg from "@/assets/svg/Model-SoundOn.svg?raw";
+import soundMuteSvg from "@/assets/svg/Model-SoundMute.svg?raw";
 
 export const showPalette = ref(false);
 
 export const defaultLayout: Record<DockPosition, string[]> = {
   "top-left": [],
-  "top-right": ["theme", "palette", "time-format"],
+  "top-right": ["theme", "palette", "time-format", "sound"],
   "bottom-left": ["settings"],
   "bottom-right": ["loading"],
 };
 
 const themeStore = useThemeModeStore();
 const timeStore = useTimeFormatStore();
+const soundStore = useSoundToggleStore();
 const layoutStore = useIconsLayoutStore();
 
 export const iconConfigMap: Record<string, IconConfig> = {
@@ -54,6 +58,14 @@ export const iconConfigMap: Record<string, IconConfig> = {
       timeStore.is24h ? "var(--theme-icon-time-24)" : "var(--theme-icon-time-12)"
     ),
     onClick: () => timeStore.toggle(),
+  },
+  sound: {
+    svg: () => (soundStore.isSoundOn ? soundOnSvg : soundMuteSvg),
+    svgWatch: () => soundStore.isSoundOn,
+    color: computed(() =>
+      soundStore.isSoundOn ? "var(--theme-icon-sound-on)" : "var(--theme-icon-sound-mute)"
+    ),
+    onClick: () => soundStore.toggle(),
   },
   settings: {
     svg: settingsSvg,
@@ -88,6 +100,8 @@ onMounted(() => {
   --theme-icon-time-24: #8b5cf6;
   --theme-icon-settings: #ff1827;
   --theme-icon-loading: #6366f1;
+  --theme-icon-sound-on: #0ea5e9;
+  --theme-icon-sound-mute: #6b7280;
 }
 
 :global(html) {
