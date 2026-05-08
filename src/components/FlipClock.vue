@@ -32,32 +32,27 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useTimeFormatStore } from "@/stores/TimeFormat";
+
 const digitMaxValues = [2, 9, 5, 9, 5, 9] as const;
 const digitGroups = [
   [0, 1],
   [2, 3],
   [4, 5],
 ] as const;
-const digitRanges = digitMaxValues.map((max) =>
-  Array.from({ length: max + 1 }, (_, index) => index)
-);
-</script>
+const digitRanges = digitMaxValues.map((max) => Array.from({ length: max + 1 }, (_, i) => i));
 
-<script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { useClockStore } from "@/stores/clock";
-
-const clockStore = useClockStore();
+const timeFormatStore = useTimeFormatStore();
 
 const currentDigits = ref(getDigitsFromTime());
 const previousDigits = ref([...currentDigits.value]);
-const isAnimating = ref([false, false, false, false, false, false]);
-
+const isAnimating = ref(digitMaxValues.map(() => false));
 const timeRef = ref(new Date());
 
 const ampm = computed(() => {
-  if (clockStore.is24h) return null;
+  if (timeFormatStore.is24h) return null;
   return timeRef.value.getHours() >= 12 ? "PM" : "AM";
 });
 
@@ -65,7 +60,7 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 
 function getDigitsFromTime(now = new Date()): number[] {
   let hours = now.getHours();
-  if (!clockStore.is24h) {
+  if (!timeFormatStore.is24h) {
     hours = hours % 12;
     if (hours === 0) hours = 12;
   }
@@ -82,33 +77,24 @@ function getDigitsFromTime(now = new Date()): number[] {
   ];
 }
 
-function updateDigitValue(digitIndex: number, nextDigit: number) {
-  const currentDigit = currentDigits.value[digitIndex];
-  const changed = nextDigit !== currentDigit;
-
-  isAnimating.value[digitIndex] = changed;
-  if (changed) {
-    previousDigits.value[digitIndex] = currentDigit;
-    currentDigits.value[digitIndex] = nextDigit;
-  }
-}
-
 function syncDigitsWithTime(now = new Date()) {
   timeRef.value = now;
-  getDigitsFromTime(now).forEach((digit, index) => updateDigitValue(index, digit));
-}
-
-function scheduleNextTick() {
-  if (document.hidden) return;
-  const delay = 1000 - (Date.now() % 1000);
-  timer = setTimeout(tick, delay || 1000);
+  getDigitsFromTime(now).forEach((digit, i) => {
+    const changed = digit !== currentDigits.value[i];
+    isAnimating.value[i] = changed;
+    if (changed) {
+      previousDigits.value[i] = currentDigits.value[i];
+      currentDigits.value[i] = digit;
+    }
+  });
 }
 
 function tick() {
   timer = null;
   if (document.hidden) return;
   syncDigitsWithTime();
-  scheduleNextTick();
+  const delay = 1000 - (Date.now() % 1000);
+  timer = setTimeout(tick, delay || 1000);
 }
 
 function stopTimer() {
@@ -121,14 +107,14 @@ function stopTimer() {
 function handleVisibilityChange() {
   if (document.hidden) {
     stopTimer();
-    return;
+  } else {
+    stopTimer();
+    syncDigitsWithTime();
+    tick();
   }
-  syncDigitsWithTime();
-  if (!timer) scheduleNextTick();
 }
 
 onMounted(() => {
-  clockStore.init();
   handleVisibilityChange();
   document.addEventListener("visibilitychange", handleVisibilityChange);
 });
@@ -176,7 +162,7 @@ onBeforeUnmount(() => {
   left: 50%;
   margin-top: 10px;
   font-family:
-    "Cascadia Code", "Cascadia Mono", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
+    "JetBrains Mono", "Cascadia Code", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
   font-size: calc(var(--digit-width) * 0.55);
   font-weight: 600;
@@ -249,7 +235,7 @@ onBeforeUnmount(() => {
   height: 50%;
   overflow: hidden;
   backface-visibility: hidden;
-  will-change: transform, opacity;
+  will-change: transform;
 }
 
 .upper {
@@ -277,14 +263,16 @@ onBeforeUnmount(() => {
   position: absolute;
   left: 0;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 200%;
   font-family:
-    "Cascadia Code", "Cascadia Mono", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
+    "JetBrains Mono", "Cascadia Code", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
   font-variant-numeric: tabular-nums;
   color: var(--digit-text-color);
-  text-align: center;
   background-color: var(--digit-bg-color);
   border-radius: calc(var(--digit-width) * 0.12);
 }

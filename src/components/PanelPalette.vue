@@ -1,87 +1,78 @@
 <template>
-  <Teleport to="body">
-    <Transition name="palette">
-      <div v-if="visible" class="palette-backdrop" @click.self="$emit('close')">
-        <div class="palette-panel">
-          <!-- 主色调行 -->
-          <div class="palette-row">
-            <span class="palette-row-label">主色调</span>
-            <div class="palette-dots">
-              <button
-                v-for="(preset, i) in primaryPresets"
-                :key="'p-' + i"
-                class="palette-dot"
-                :style="{ backgroundColor: primaryHex(preset) }"
-                :title="preset.name"
-                @click="onPickPrimary(preset)"
-              ></button>
-              <button
-                class="palette-dot palette-dot-picker"
-                title="自定义颜色"
-                @click="openCustomPicker('primary')"
-              ></button>
-              <button
-                class="palette-dot palette-dot-reset"
-                title="重置主色调"
-                :disabled="!colorsStore.hasCustom"
-                @click="colorsStore.resetCurrentMode()"
-              >
-                <span class="reset-icon">↺</span>
-              </button>
-            </div>
+  <Transition name="palette">
+    <div v-if="showPalette" class="palette-backdrop" @click.self="showPalette = false">
+      <div class="palette-panel">
+        <div class="palette-row">
+          <span class="palette-row-label">主色调</span>
+          <div class="palette-dots">
+            <button
+              v-for="(preset, i) in primaryPresets"
+              :key="'p-' + i"
+              class="palette-dot"
+              :style="{ backgroundColor: primaryHex(preset) }"
+              :title="preset.name"
+              @click="onPickPrimary(preset)"
+            ></button>
+            <button
+              class="palette-dot palette-dot-picker"
+              title="自定义颜色"
+              @click="openCustomPicker('primary')"
+            ></button>
+            <button
+              class="palette-dot palette-dot-reset"
+              title="重置主色调"
+              :disabled="!paletteStore.hasPrimaryCustom"
+              @click="paletteStore.resetPrimary()"
+            >
+              <span class="reset-icon">↺</span>
+            </button>
           </div>
-
-          <!-- 副色调行 -->
-          <div class="palette-row">
-            <span class="palette-row-label">副色调</span>
-            <div class="palette-dots">
-              <button
-                v-for="(preset, i) in secondaryPresets"
-                :key="'s-' + i"
-                class="palette-dot"
-                :style="{ backgroundColor: secondaryHex(preset) }"
-                :title="preset.name"
-                @click="onPickSecondary(preset)"
-              ></button>
-              <button
-                class="palette-dot palette-dot-picker"
-                title="自定义颜色"
-                @click="openCustomPicker('secondary')"
-              ></button>
-              <button
-                class="palette-dot palette-dot-reset"
-                title="重置副色调"
-                :disabled="!colorsStore.hasCustom"
-                @click="colorsStore.resetCurrentMode()"
-              >
-                <span class="reset-icon">↺</span>
-              </button>
-            </div>
-          </div>
-
-          <input ref="customInput" type="color" class="visually-hidden" @input="onCustomPick" />
         </div>
+
+        <div class="palette-row">
+          <span class="palette-row-label">副色调</span>
+          <div class="palette-dots">
+            <button
+              v-for="(preset, i) in secondaryPresets"
+              :key="'s-' + i"
+              class="palette-dot"
+              :style="{ backgroundColor: secondaryHex(preset) }"
+              :title="preset.name"
+              @click="onPickSecondary(preset)"
+            ></button>
+            <button
+              class="palette-dot palette-dot-picker"
+              title="自定义颜色"
+              @click="openCustomPicker('secondary')"
+            ></button>
+            <button
+              class="palette-dot palette-dot-reset"
+              title="重置副色调"
+              :disabled="!paletteStore.hasSecondaryCustom"
+              @click="paletteStore.resetSecondary()"
+            >
+              <span class="reset-icon">↺</span>
+            </button>
+          </div>
+        </div>
+
+        <input ref="customInput" type="color" class="visually-hidden" @input="onCustomPick" />
       </div>
-    </Transition>
-  </Teleport>
+    </div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { useThemeStore } from "@/stores/theme";
-import { useThemeColorsStore } from "@/stores/themeColors";
-import { hexToHSL, hslToHex } from "@/utils/color-utils";
+import { useThemeModeStore } from "@/stores/ThemeMode";
+import { useKeepPaletteStore, hexToHSL, hslToHex } from "@/stores/KeepPalette";
+import { showPalette } from "@/components/IconsConfig.vue";
 
-defineProps<{ visible: boolean }>();
-defineEmits<{ close: [] }>();
-
-const themeStore = useThemeStore();
-const colorsStore = useThemeColorsStore();
+const themeStore = useThemeModeStore();
+const paletteStore = useKeepPaletteStore();
 
 const customInput = ref<HTMLInputElement | null>(null);
 const customTarget = ref<"primary" | "secondary">("primary");
-
-// ---- 预设色盘 ----
 
 interface Preset {
   name: string;
@@ -103,8 +94,6 @@ const secondaryPresets: Preset[] = [
   { name: "玫红", h: 330, s: 70 },
 ];
 
-// ---- 方法 ----
-
 const primaryL = computed(() => (themeStore.isDark ? 18 : 95));
 const secondaryL = computed(() => (themeStore.isDark ? 54 : 50));
 
@@ -116,11 +105,11 @@ function secondaryHex(p: Preset): string {
 }
 
 function onPickPrimary(p: Preset) {
-  colorsStore.setPrimary({ h: p.h, s: p.s, l: primaryL.value });
+  paletteStore.setPrimary({ h: p.h, s: p.s, l: primaryL.value });
 }
 
 function onPickSecondary(p: Preset) {
-  colorsStore.setSecondary({ h: p.h, s: p.s, l: secondaryL.value });
+  paletteStore.setSecondary({ h: p.h, s: p.s, l: secondaryL.value });
 }
 
 function openCustomPicker(target: "primary" | "secondary") {
@@ -133,9 +122,9 @@ function onCustomPick(event: Event) {
   const hsl = hexToHSL(target.value);
   if (!hsl) return;
   if (customTarget.value === "primary") {
-    colorsStore.setPrimary(hsl);
+    paletteStore.setPrimary(hsl);
   } else {
-    colorsStore.setSecondary(hsl);
+    paletteStore.setSecondary(hsl);
   }
 }
 </script>
@@ -242,7 +231,6 @@ function onCustomPick(event: Event) {
   opacity: 0;
 }
 
-/* Transition */
 .palette-enter-active,
 .palette-leave-active {
   transition:

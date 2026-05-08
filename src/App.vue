@@ -1,10 +1,7 @@
 <template>
-  <ChangeTheme>
-    <RouterView />
-  </ChangeTheme>
+  <RouterView />
 </template>
 
 <script setup lang="ts">
 import { RouterView } from "vue-router";
-import ChangeTheme from "@/components/ChangeTheme.vue";
 </script>
