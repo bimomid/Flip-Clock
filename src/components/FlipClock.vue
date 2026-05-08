@@ -36,7 +36,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useTimeFormatStore } from "@/stores/TimeFormat";
 import { useSoundToggleStore } from "@/stores/SoundToggle";
-import beepAudio from "@/assets/mp3/beepA.mp3";
+import flipClockAudioSrc from "@/assets/mp3/FlipClock.mp3";
 
 const digitMaxValues = [2, 9, 5, 9, 5, 9] as const;
 const digitGroups = [
@@ -49,8 +49,8 @@ const digitRanges = digitMaxValues.map((max) => Array.from({ length: max + 1 }, 
 const timeFormatStore = useTimeFormatStore();
 const soundStore = useSoundToggleStore();
 
-const flipAudio = new Audio(beepAudio);
-flipAudio.volume = 0.6;
+const flipClockAudio = new Audio(flipClockAudioSrc);
+flipClockAudio.volume = 0.6;
 
 const currentDigits = ref(getDigitsFromTime());
 const previousDigits = ref([...currentDigits.value]);
@@ -96,8 +96,8 @@ function syncDigitsWithTime(now = new Date()) {
     }
   });
   if (anyChanged && soundStore.isSoundOn) {
-    flipAudio.currentTime = 0;
-    flipAudio.play().catch(() => {});
+    flipClockAudio.currentTime = 0;
+    flipClockAudio.play().catch(() => {});
   }
 }
 
