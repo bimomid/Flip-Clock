@@ -1,0 +1,50 @@
+{
+  "locale": {
+    "name": "简体中文"
+  },
+  "app": {
+    "title": "Flip Clock"
+  },
+  "countClock": {
+    "pause": "暂停",
+    "start": "启动",
+    "lap": "分段",
+    "reset": "复位"
+  },
+  "focusTimePicker": {
+    "confirm": "确认"
+  },
+  "palette": {
+    "primaryColor": "主色调",
+    "secondaryColor": "副色调",
+    "customColor": "自定义颜色",
+    "resetPrimary": "重置主色调",
+    "resetSecondary": "重置副色调"
+  },
+  "presets": {
+    "warmBeige": "暖米",
+    "coolGray": "冷灰",
+    "sage": "鼠尾草",
+    "lavender": "薰衣草",
+    "goldenOrange": "金橙",
+    "skyBlue": "天蓝",
+    "emeraldGreen": "翠绿",
+    "roseRed": "玫红"
+  },
+  "taskWindow": {
+    "title": "任务清单"
+  },
+  "icons": {
+    "theme": "主题模式",
+    "palette": "调色板",
+    "time-format": "时间格式",
+    "sound": "声音",
+    "loading": "重置布局",
+    "alarm-clock": "专注计时",
+    "count-clock": "计时器",
+    "home": "主页",
+    "tasks": "任务列表",
+    "visibility": "显示/隐藏",
+    "language": "语言"
+  }
+}

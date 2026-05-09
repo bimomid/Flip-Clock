@@ -27,15 +27,17 @@ import hideSvg from "@/assets/svg/Model-Hide.svg?raw";
 import countClockSvg from "@/assets/svg/Model-CountClock.svg?raw";
 import homeSvg from "@/assets/svg/Model-Home.svg?raw";
 import tasksSvg from "@/assets/svg/Model-Tasks.svg?raw";
+import languageSvg from "@/assets/svg/Model-Language.svg?raw";
 
 export const showPalette = ref(false);
+export const showLanguagePicker = ref(false);
 export const isIconsHidden = ref(false);
 export const manualIconOverride = ref(false);
 
 export const defaultLayout: Record<DockPosition, string[]> = {
   "top-left": ["home", "alarm-clock", "count-clock", "tasks"],
   "top-right": ["theme", "palette", "time-format", "sound"],
-  "bottom-left": ["loading"],
+  "bottom-left": ["loading", "language"],
   "bottom-right": ["visibility"],
   top: [],
   bottom: [],
@@ -164,6 +166,13 @@ export const iconConfigMap: Record<string, IconConfig> = {
       manualIconOverride.value = true;
     },
   },
+  language: {
+    svg: languageSvg,
+    color: "var(--theme-icon-language)",
+    onClick: () => {
+      showLanguagePicker.value = !showLanguagePicker.value;
+    },
+  },
 };
 </script>
 
@@ -195,6 +204,7 @@ onMounted(() => {
   --theme-icon-tasks: #e11d48;
   --theme-icon-hidden: #6b7280;
   --theme-icon-visible: #22c55e;
+  --theme-icon-language: #a855f7;
 }
 
 :global(html) {

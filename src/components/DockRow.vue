@@ -125,7 +125,7 @@ function captureIconRects(): Map<string, DOMRect> {
   if (!rowEl.value) return map;
   const buttons = rowEl.value.querySelectorAll(".toolbar-dock-item");
   buttons.forEach((el) => {
-    const id = el.getAttribute("aria-label");
+    const id = el.getAttribute("data-icon-id");
     if (id) map.set(id, el.getBoundingClientRect());
   });
   return map;
@@ -143,7 +143,7 @@ function animateFrom(oldRects: Map<string, DOMRect>) {
   const animations: Animation[] = [];
 
   buttons.forEach((el) => {
-    const id = el.getAttribute("aria-label");
+    const id = el.getAttribute("data-icon-id");
     if (!id) return;
     const oldRect = oldRects.get(id);
     if (!oldRect) return;

@@ -2,10 +2,11 @@
   <button
     class="toolbar-dock-item"
     type="button"
-    :aria-label="iconId"
-    :title="iconId"
+    :aria-label="t(`icons.${iconId}`)"
+    :title="t(`icons.${iconId}`)"
     :style="{ color: iconColor }"
     :class="{ 'is-preview': isDragPreview }"
+    :data-icon-id="iconId"
     :data-preview="isDragPreview ? 'true' : undefined"
     @pointerdown="onPointerDown"
     @click="onClick"
@@ -36,9 +37,12 @@ export const tracking = reactive({
 
 <script setup lang="ts">
 import { computed, unref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useIconsDragStore } from "@/stores/IconsDrag";
 import { iconConfigMap } from "@/components/IconsConfig.vue";
 import SvgIcon from "@/components/SvgIcon.vue";
+
+const { t } = useI18n();
 
 const props = defineProps<{
   iconId: string;
