@@ -12,12 +12,12 @@ import { useSoundToggleStore } from "@/stores/SoundToggle";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
 import { useFocusTimerStore } from "@/stores/FocusTimer";
 import { useCountClockStore } from "@/stores/CountClock";
+import { useTaskStore } from "@/stores/TaskWindow";
 import darkSvg from "@/assets/svg/Model-Dark.svg?raw";
 import lightSvg from "@/assets/svg/Model-Light.svg?raw";
 import time24Svg from "@/assets/svg/Model-24.svg?raw";
 import time12Svg from "@/assets/svg/Model-12.svg?raw";
 import paletteSvg from "@/assets/svg/Model-Palette.svg?raw";
-import settingsSvg from "@/assets/svg/Model-Settings.svg?raw";
 import loadingSvg from "@/assets/svg/Model-Loading.svg?raw";
 import soundOnSvg from "@/assets/svg/Model-SoundOn.svg?raw";
 import soundMuteSvg from "@/assets/svg/Model-SoundMute.svg?raw";
@@ -35,8 +35,8 @@ export const manualIconOverride = ref(false);
 export const defaultLayout: Record<DockPosition, string[]> = {
   "top-left": ["home", "alarm-clock", "count-clock", "tasks"],
   "top-right": ["theme", "palette", "time-format", "sound"],
-  "bottom-left": ["settings"],
-  "bottom-right": ["loading", "visibility"],
+  "bottom-left": ["loading"],
+  "bottom-right": ["visibility"],
   top: [],
   bottom: [],
 };
@@ -47,6 +47,7 @@ const soundStore = useSoundToggleStore();
 const layoutStore = useIconsLayoutStore();
 const focusTimerStore = useFocusTimerStore();
 const countClockStore = useCountClockStore();
+const taskStore = useTaskStore();
 
 let lastFocusToggle = 0;
 
@@ -106,10 +107,6 @@ export const iconConfigMap: Record<string, IconConfig> = {
     ),
     onClick: () => soundStore.toggle(),
   },
-  settings: {
-    svg: settingsSvg,
-    color: "var(--theme-icon-settings)",
-  },
   loading: {
     svg: loadingSvg,
     color: "var(--theme-icon-loading)",
@@ -154,6 +151,7 @@ export const iconConfigMap: Record<string, IconConfig> = {
   tasks: {
     svg: tasksSvg,
     color: "var(--theme-icon-tasks)",
+    onClick: () => taskStore.toggleVisibility(),
   },
   visibility: {
     svg: () => (isIconsHidden.value ? hideSvg : displaySvg),
@@ -188,7 +186,6 @@ onMounted(() => {
   --theme-icon-palette: #ec4899;
   --theme-icon-time-12: #10b981;
   --theme-icon-time-24: #8b5cf6;
-  --theme-icon-settings: #ef4444;
   --theme-icon-loading: #6366f1;
   --theme-icon-sound-on: #0ea5e9;
   --theme-icon-sound-mute: #9ca3af;
