@@ -35,7 +35,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useIconsDragStore, type DockPosition } from "@/stores/IconsDrag";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
-import { iconConfigMap } from "@/components/IconsConfig.vue";
+import { iconConfigMap, isIconsHidden } from "@/components/IconsConfig.vue";
 import SvgIcon from "@/components/SvgIcon.vue";
 import IconsDrag, { tracking, DRAG_THRESHOLD } from "@/components/IconsDrag.vue";
 
@@ -65,9 +65,13 @@ const isDragTarget = computed(
 
 const displayIcons = computed<DisplayIcon[]>(() => {
   const sourceList = props.mergedIcons ?? layoutStore.iconsAt(props.position);
-  const icons: DisplayIcon[] = sourceList
+  let icons: DisplayIcon[] = sourceList
     .filter((id) => id !== dragStore.iconId)
     .map((id) => ({ id }));
+
+  if (isIconsHidden.value) {
+    icons = icons.filter((icon) => icon.id === "visibility");
+  }
 
   if (!isDragTarget.value || !dragStore.iconId) return icons;
 

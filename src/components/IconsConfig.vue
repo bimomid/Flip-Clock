@@ -11,6 +11,7 @@ import { useTimeFormatStore } from "@/stores/TimeFormat";
 import { useSoundToggleStore } from "@/stores/SoundToggle";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
 import { useFocusTimerStore } from "@/stores/FocusTimer";
+import { useCountClockStore } from "@/stores/CountClock";
 import darkSvg from "@/assets/svg/Model-Dark.svg?raw";
 import lightSvg from "@/assets/svg/Model-Light.svg?raw";
 import time24Svg from "@/assets/svg/Model-24.svg?raw";
@@ -21,17 +22,21 @@ import loadingSvg from "@/assets/svg/Model-Loading.svg?raw";
 import soundOnSvg from "@/assets/svg/Model-SoundOn.svg?raw";
 import soundMuteSvg from "@/assets/svg/Model-SoundMute.svg?raw";
 
+import displaySvg from "@/assets/svg/Model-Display.svg?raw";
+import hideSvg from "@/assets/svg/Model-Hide.svg?raw";
 import countClockSvg from "@/assets/svg/Model-CountClock.svg?raw";
 import homeSvg from "@/assets/svg/Model-Home.svg?raw";
 import tasksSvg from "@/assets/svg/Model-Tasks.svg?raw";
 
 export const showPalette = ref(false);
+export const isIconsHidden = ref(false);
+export const manualIconOverride = ref(false);
 
 export const defaultLayout: Record<DockPosition, string[]> = {
   "top-left": ["home", "alarm-clock", "count-clock", "tasks"],
   "top-right": ["theme", "palette", "time-format", "sound"],
   "bottom-left": ["settings"],
-  "bottom-right": ["loading"],
+  "bottom-right": ["loading", "visibility"],
   top: [],
   bottom: [],
 };
@@ -41,6 +46,7 @@ const timeStore = useTimeFormatStore();
 const soundStore = useSoundToggleStore();
 const layoutStore = useIconsLayoutStore();
 const focusTimerStore = useFocusTimerStore();
+const countClockStore = useCountClockStore();
 
 let lastFocusToggle = 0;
 
@@ -113,11 +119,22 @@ export const iconConfigMap: Record<string, IconConfig> = {
     svg: () => generateAlarmClockSvg(focusTimerStore.progress),
     svgWatch: () => focusTimerStore.progress,
     color: "var(--theme-icon-alarm-clock)",
-    onClick: createFocusAction(() => focusTimerStore.toggleVisibility()),
+    onClick: createFocusAction(() => {
+      if (countClockStore.isVisible) {
+        countClockStore.isVisible = false;
+      }
+      focusTimerStore.toggleVisibility();
+    }),
   },
   "count-clock": {
     svg: countClockSvg,
     color: "var(--theme-icon-count-clock)",
+    onClick: createFocusAction(() => {
+      if (focusTimerStore.isVisible) {
+        focusTimerStore.isVisible = false;
+      }
+      countClockStore.toggleVisibility();
+    }),
   },
   home: {
     svg: homeSvg,
@@ -129,11 +146,25 @@ export const iconConfigMap: Record<string, IconConfig> = {
       if (focusTimerStore.isVisible) {
         focusTimerStore.isVisible = false;
       }
+      if (countClockStore.isVisible) {
+        countClockStore.isVisible = false;
+      }
     }),
   },
   tasks: {
     svg: tasksSvg,
     color: "var(--theme-icon-tasks)",
+  },
+  visibility: {
+    svg: () => (isIconsHidden.value ? hideSvg : displaySvg),
+    svgWatch: () => isIconsHidden.value,
+    color: computed(() =>
+      isIconsHidden.value ? "var(--theme-icon-visible)" : "var(--theme-icon-hidden)"
+    ),
+    onClick: () => {
+      isIconsHidden.value = !isIconsHidden.value;
+      manualIconOverride.value = true;
+    },
   },
 };
 </script>
@@ -165,6 +196,8 @@ onMounted(() => {
   --theme-icon-count-clock: #14b8a6;
   --theme-icon-home: #f97316;
   --theme-icon-tasks: #e11d48;
+  --theme-icon-hidden: #6b7280;
+  --theme-icon-visible: #22c55e;
 }
 
 :global(html) {
