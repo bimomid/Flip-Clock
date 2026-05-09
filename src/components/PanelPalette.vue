@@ -3,7 +3,7 @@
     <div v-if="showPalette" class="palette-backdrop" @click.self="showPalette = false">
       <div class="palette-panel">
         <div class="palette-row">
-          <span class="palette-row-label">主色调</span>
+          <span class="palette-row-label">{{ $t("palette.primaryColor") }}</span>
           <div class="palette-dots">
             <button
               v-for="(preset, i) in primaryPresets"
@@ -15,12 +15,12 @@
             ></button>
             <button
               class="palette-dot palette-dot-picker"
-              title="自定义颜色"
+              :title="$t('palette.customColor')"
               @click="openCustomPicker('primary')"
             ></button>
             <button
               class="palette-dot palette-dot-reset"
-              title="重置主色调"
+              :title="$t('palette.resetPrimary')"
               :disabled="!paletteStore.hasPrimaryCustom"
               @click="paletteStore.resetPrimary()"
             >
@@ -30,7 +30,7 @@
         </div>
 
         <div class="palette-row">
-          <span class="palette-row-label">副色调</span>
+          <span class="palette-row-label">{{ $t("palette.secondaryColor") }}</span>
           <div class="palette-dots">
             <button
               v-for="(preset, i) in secondaryPresets"
@@ -42,12 +42,12 @@
             ></button>
             <button
               class="palette-dot palette-dot-picker"
-              title="自定义颜色"
+              :title="$t('palette.customColor')"
               @click="openCustomPicker('secondary')"
             ></button>
             <button
               class="palette-dot palette-dot-reset"
-              title="重置副色调"
+              :title="$t('palette.resetSecondary')"
               :disabled="!paletteStore.hasSecondaryCustom"
               @click="paletteStore.resetSecondary()"
             >
@@ -64,10 +64,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useThemeModeStore } from "@/stores/ThemeMode";
 import { useKeepPaletteStore, hexToHSL, hslToHex } from "@/stores/KeepPalette";
 import { showPalette } from "@/components/IconsConfig.vue";
 import resetSvg from "@/assets/svg/Func-Reset.svg?raw";
+
+const { t } = useI18n();
 
 const themeStore = useThemeModeStore();
 const paletteStore = useKeepPaletteStore();
@@ -81,19 +84,19 @@ interface Preset {
   s: number;
 }
 
-const primaryPresets: Preset[] = [
-  { name: "暖米", h: 40, s: 28 },
-  { name: "冷灰", h: 220, s: 10 },
-  { name: "鼠尾草", h: 120, s: 12 },
-  { name: "薰衣草", h: 270, s: 12 },
-];
+const primaryPresets = computed<Preset[]>(() => [
+  { name: t("presets.warmBeige"), h: 40, s: 28 },
+  { name: t("presets.coolGray"), h: 220, s: 10 },
+  { name: t("presets.sage"), h: 120, s: 12 },
+  { name: t("presets.lavender"), h: 270, s: 12 },
+]);
 
-const secondaryPresets: Preset[] = [
-  { name: "金橙", h: 36, s: 90 },
-  { name: "天蓝", h: 210, s: 75 },
-  { name: "翠绿", h: 150, s: 65 },
-  { name: "玫红", h: 330, s: 70 },
-];
+const secondaryPresets = computed<Preset[]>(() => [
+  { name: t("presets.goldenOrange"), h: 36, s: 90 },
+  { name: t("presets.skyBlue"), h: 210, s: 75 },
+  { name: t("presets.emeraldGreen"), h: 150, s: 65 },
+  { name: t("presets.roseRed"), h: 330, s: 70 },
+]);
 
 const primaryL = computed(() => (themeStore.isDark ? 18 : 95));
 const secondaryL = computed(() => (themeStore.isDark ? 54 : 50));

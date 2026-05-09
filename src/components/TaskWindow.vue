@@ -11,7 +11,7 @@
     }"
   >
     <div class="task-titlebar" @mousedown="onDragStart">
-      <span class="task-titlebar-text">任务清单</span>
+      <span class="task-titlebar-text">{{ $t("taskWindow.title") }}</span>
     </div>
     <textarea v-model="store.content" class="task-textarea" placeholder="..." spellcheck="false" />
     <div class="resize-handle resize-r" @mousedown="onResizeStart($event, 'r')" />

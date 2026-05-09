@@ -1,0 +1,50 @@
+{
+  "locale": {
+    "name": "English"
+  },
+  "app": {
+    "title": "Flip Clock"
+  },
+  "countClock": {
+    "pause": "Pause",
+    "start": "Start",
+    "lap": "Lap",
+    "reset": "Reset"
+  },
+  "focusTimePicker": {
+    "confirm": "Confirm"
+  },
+  "palette": {
+    "primaryColor": "Primary",
+    "secondaryColor": "Secondary",
+    "customColor": "Custom Color",
+    "resetPrimary": "Reset Primary",
+    "resetSecondary": "Reset Secondary"
+  },
+  "presets": {
+    "warmBeige": "Warm Beige",
+    "coolGray": "Cool Gray",
+    "sage": "Sage",
+    "lavender": "Lavender",
+    "goldenOrange": "Golden Orange",
+    "skyBlue": "Sky Blue",
+    "emeraldGreen": "Emerald",
+    "roseRed": "Rose Red"
+  },
+  "taskWindow": {
+    "title": "Tasks"
+  },
+  "icons": {
+    "theme": "Theme",
+    "palette": "Palette",
+    "time-format": "Time Format",
+    "sound": "Sound",
+    "loading": "Reset Layout",
+    "alarm-clock": "Focus Timer",
+    "count-clock": "Stopwatch",
+    "home": "Home",
+    "tasks": "Task List",
+    "visibility": "Show/Hide",
+    "language": "Language"
+  }
+}

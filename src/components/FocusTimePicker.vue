@@ -29,7 +29,7 @@
         </template>
       </div>
 
-      <button class="picker-confirm" @click="onConfirm">确认</button>
+      <button class="picker-confirm" @click="onConfirm">{{ $t("focusTimePicker.confirm") }}</button>
     </div>
   </div>
 </template>

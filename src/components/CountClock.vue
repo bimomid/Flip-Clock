@@ -9,10 +9,10 @@
 
     <div class="count-controls">
       <button class="count-btn" @click="store.startOrPause()">
-        {{ store.isRunning ? "暂停" : "启动" }}
+        {{ store.isRunning ? $t("countClock.pause") : $t("countClock.start") }}
       </button>
       <button class="count-btn" @click="store.resetOrLap()">
-        {{ store.isRunning ? "分段" : "复位" }}
+        {{ store.isRunning ? $t("countClock.lap") : $t("countClock.reset") }}
       </button>
     </div>
 
