@@ -458,8 +458,10 @@ onBeforeUnmount(() => {
 
 /* ====== Firefox 滚动条 ====== */
 
-.toolbar-dock.is-fluid {
-  scrollbar-color: hsl(var(--s-h) var(--s-s) var(--s-l) / 35%) transparent;
-  scrollbar-width: thin;
+@supports (-moz-appearance: none) {
+  .toolbar-dock.is-fluid {
+    scrollbar-color: hsl(var(--s-h) var(--s-s) var(--s-l) / 35%) transparent;
+    scrollbar-width: thin;
+  }
 }
 </style>
