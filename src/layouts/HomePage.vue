@@ -17,6 +17,7 @@
       </Transition>
     </div>
     <PanelPalette />
+    <TaskWindow />
   </main>
 </template>
 
@@ -28,6 +29,7 @@ import CountClock from "@/components/CountClock.vue";
 import IconsConfig, { isIconsHidden, manualIconOverride } from "@/components/IconsConfig.vue";
 import DockRow from "@/components/DockRow.vue";
 import PanelPalette from "@/components/PanelPalette.vue";
+import TaskWindow from "@/components/TaskWindow.vue";
 import { useFocusTimerStore } from "@/stores/FocusTimer";
 import { useCountClockStore } from "@/stores/CountClock";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
