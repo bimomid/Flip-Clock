@@ -19,7 +19,7 @@
 import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import type { DockPosition } from "@/stores/IconsDrag";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
-import { defaultLayout as defaultLayoutMap } from "@/components/IconsConfig.vue";
+import { defaultLayout as defaultLayoutMap, isIconsHidden } from "@/components/IconsConfig.vue";
 import IconsDock from "@/components/IconsDock.vue";
 
 const props = defineProps<{
@@ -53,6 +53,14 @@ function getAvailableWidth(): number {
   return container.clientWidth - 40; // 20px left + 20px right
 }
 
+function calcPillWidth(count: number): number {
+  if (count === 0) return 0;
+  const ICON_SIZE = 38;
+  const ICON_GAP = 12;
+  const PILL_PAD = 14;
+  return PILL_PAD * 2 + 2 + count * ICON_SIZE + (count - 1) * ICON_GAP;
+}
+
 /** 仅在分离模式下调用：测量左右两个 pill 的宽度计算间隙 */
 function measureSplitGap(): number {
   if (!rowEl.value) return Infinity;
@@ -61,14 +69,15 @@ function measureSplitGap(): number {
   const rightCount = layoutStore.iconsAt(rightPos).length;
   if (leftCount === 0 && rightCount === 0) return Infinity;
 
-  const pillW = (pos: DockPosition) => {
+  const pillW = (pos: DockPosition, count: number) => {
+    if (isIconsHidden.value) return calcPillWidth(count);
     const row = rowEl.value!.querySelector(
       `[data-position="${pos}"] .toolbar-dock-row`
     ) as HTMLElement | null;
     return row?.scrollWidth ?? 0;
   };
 
-  return getAvailableWidth() - pillW(leftPos) - pillW(rightPos);
+  return getAvailableWidth() - pillW(leftPos, leftCount) - pillW(rightPos, rightCount);
 }
 
 /** 在合并模式下估算拆分成两个 pill 后的总宽度 */
@@ -77,13 +86,7 @@ function estimateSplitWidth(): number {
   const leftIcons = merged.filter((id) => defaultLeftSet.has(id));
   const rightIcons = merged.filter((id) => !defaultLeftSet.has(id));
 
-  // 每个图标占用: icon-size(38px) + gap(12px)，最后一个无 gap
-  // pill padding(14*2) + border(2) = 30px
-  const iconUnit = 50; // 38 + 12
-  const pillOverhead = 30;
-  const w = (count: number) => (count > 0 ? count * iconUnit - 12 + pillOverhead : 0);
-
-  return w(leftIcons.length) + w(rightIcons.length);
+  return calcPillWidth(leftIcons.length) + calcPillWidth(rightIcons.length);
 }
 
 function checkCollision() {
@@ -265,6 +268,11 @@ watch(
   },
   { deep: true }
 );
+
+// 图标隐藏/显示时重新检测碰撞（DOM 中图标数量变化会导致测量不准）
+watch(isIconsHidden, () => {
+  nextTick(checkCollision);
+});
 </script>
 
 <style scoped>
