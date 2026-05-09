@@ -1,7 +1,13 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 
-export type DockPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+export type DockPosition =
+  | "top-left"
+  | "top-right"
+  | "bottom-left"
+  | "bottom-right"
+  | "top"
+  | "bottom";
 
 interface DockRef {
   el: HTMLElement;

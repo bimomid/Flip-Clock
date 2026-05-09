@@ -109,22 +109,22 @@ export const useKeepPaletteStore = defineStore(
     }
 
     function setColor(key: "primary" | "secondary", hsl: HSL) {
-      const ref = currentRef();
-      if (!ref.value) ref.value = { ...currentDefaults() };
-      ref.value[key] = hsl;
+      const overrides = currentRef();
+      if (!overrides.value) overrides.value = { ...currentDefaults() };
+      overrides.value[key] = hsl;
       applyCurrentMode();
     }
 
     function resetColor(key: "primary" | "secondary") {
-      const ref = currentRef();
-      const cur = ref.value;
+      const overrides = currentRef();
+      const cur = overrides.value;
       if (!cur) return;
 
       const defs = currentDefaults();
       const other = key === "primary" ? "secondary" : "primary";
 
       if (hslEqual(cur[other], defs[other])) {
-        ref.value = null;
+        overrides.value = null;
       } else {
         cur[key] = { ...defs[key] };
       }

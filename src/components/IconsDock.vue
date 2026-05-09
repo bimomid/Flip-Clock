@@ -5,8 +5,10 @@
     :data-position="position"
     :class="{
       'is-hidden': isHidden,
+      'is-fluid': fluid,
       'is-drop-target': isEmpty && dragStore.active,
       'is-drag-target': isDragTarget && !isEmpty,
+      'show-scrollbar': scrollbarVisible,
     }"
   >
     <TransitionGroup name="icon-sort" tag="div" class="toolbar-dock-row">
@@ -40,6 +42,8 @@ import IconsDrag, { tracking, DRAG_THRESHOLD } from "@/components/IconsDrag.vue"
 const props = defineProps<{
   position: DockPosition;
   dropZones: DockPosition[];
+  fluid?: boolean;
+  mergedIcons?: string[];
 }>();
 
 const dragStore = useIconsDragStore();
@@ -52,31 +56,26 @@ interface DisplayIcon {
   _preview?: boolean;
 }
 
-const displayIcons = computed<DisplayIcon[]>(() => {
-  const icons: DisplayIcon[] = layoutStore
-    .iconsAt(props.position)
-    .filter((id) => id !== dragStore.iconId)
-    .map((id) => ({ id }));
-
-  const isTarget =
-    dragStore.active &&
-    dragStore.targetZone !== null &&
-    props.dropZones.includes(dragStore.targetZone);
-
-  if (!isTarget || !dragStore.iconId) return icons;
-
-  const localIdx = dragStore.targetInsert >= 0 ? dragStore.targetInsert : icons.length;
-  const idx = Math.min(localIdx, icons.length);
-
-  return [...icons.slice(0, idx), { id: dragStore.iconId, _preview: true }, ...icons.slice(idx)];
-});
-
 const isDragTarget = computed(
   () =>
     dragStore.active &&
     dragStore.targetZone !== null &&
     props.dropZones.includes(dragStore.targetZone)
 );
+
+const displayIcons = computed<DisplayIcon[]>(() => {
+  const sourceList = props.mergedIcons ?? layoutStore.iconsAt(props.position);
+  const icons: DisplayIcon[] = sourceList
+    .filter((id) => id !== dragStore.iconId)
+    .map((id) => ({ id }));
+
+  if (!isDragTarget.value || !dragStore.iconId) return icons;
+
+  const localIdx = dragStore.targetInsert >= 0 ? dragStore.targetInsert : icons.length;
+  const idx = Math.min(localIdx, icons.length);
+
+  return [...icons.slice(0, idx), { id: dragStore.iconId, _preview: true }, ...icons.slice(idx)];
+});
 
 const isEmpty = computed(() => displayIcons.value.length === 0);
 const isHidden = computed(() => isEmpty.value && !dragStore.active);
@@ -116,6 +115,55 @@ function onDocPointerMove(e: PointerEvent) {
   }
 
   dragStore.globalHitTest(e.clientX, e.clientY);
+
+  // 合并模式下，拖拽图标靠近边界时自动滚动
+  if (props.fluid && dockEl.value) {
+    autoScrollNearEdge(e.clientX);
+  }
+}
+
+// ---- 边缘自动滚动 ----
+
+let autoScrollRafId: number | null = null;
+
+function autoScrollNearEdge(px: number) {
+  if (!dockEl.value) return;
+  const r = dockEl.value.getBoundingClientRect();
+  const edgeSize = 50; // 触发区域宽度
+  const minSpeed = 2;
+  const maxSpeed = 12;
+
+  let speed = 0;
+
+  if (px < r.left + edgeSize) {
+    // 靠近左边界
+    const dist = r.left + edgeSize - px;
+    speed = -minSpeed - (dist / edgeSize) * (maxSpeed - minSpeed);
+  } else if (px > r.right - edgeSize) {
+    // 靠近右边界
+    const dist = px - (r.right - edgeSize);
+    speed = minSpeed + (dist / edgeSize) * (maxSpeed - minSpeed);
+  }
+
+  if (speed !== 0) {
+    if (!autoScrollRafId) {
+      const el = dockEl.value;
+      function step() {
+        el.scrollLeft += speed;
+        autoScrollRafId = requestAnimationFrame(step);
+      }
+      autoScrollRafId = requestAnimationFrame(step);
+    }
+  } else {
+    stopAutoScroll();
+  }
+}
+
+function stopAutoScroll() {
+  if (autoScrollRafId) {
+    cancelAnimationFrame(autoScrollRafId);
+    autoScrollRafId = null;
+  }
 }
 
 function onDocPointerUp() {
@@ -144,9 +192,39 @@ function onDocPointerUp() {
   }
 
   dragStore.endDrag();
+  stopAutoScroll();
   tracking.iconId = null;
   tracking.sourceZone = null;
   tracking.hasMoved = false;
+}
+
+// ---- 滚动条显隐控制（JS 管理，避免 CSS :hover 不可靠） ----
+
+const scrollbarVisible = ref(false);
+let scrollbarHideTimer: ReturnType<typeof setTimeout> | null = null;
+const SCROLLBAR_HIDE_DELAY = 600;
+
+function showScrollbar() {
+  if (!props.fluid) return;
+  if (scrollbarHideTimer) {
+    clearTimeout(scrollbarHideTimer);
+    scrollbarHideTimer = null;
+  }
+  scrollbarVisible.value = true;
+}
+
+function hideScrollbar() {
+  if (!props.fluid) return;
+  scrollbarHideTimer = setTimeout(() => {
+    scrollbarVisible.value = false;
+  }, SCROLLBAR_HIDE_DELAY);
+}
+
+function cancelScrollbarTimer() {
+  if (scrollbarHideTimer) {
+    clearTimeout(scrollbarHideTimer);
+    scrollbarHideTimer = null;
+  }
 }
 
 onMounted(() => {
@@ -156,6 +234,12 @@ onMounted(() => {
       dropZones: props.dropZones,
       getInsertIndex,
     });
+
+    if (props.fluid) {
+      dockEl.value.addEventListener("mouseenter", showScrollbar);
+      dockEl.value.addEventListener("mouseleave", hideScrollbar);
+      dockEl.value.addEventListener("scroll", showScrollbar);
+    }
   }
   document.addEventListener("pointermove", onDocPointerMove);
   document.addEventListener("pointerup", onDocPointerUp);
@@ -163,6 +247,13 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   dragStore.unregisterDock(props.position);
+  stopAutoScroll();
+  cancelScrollbarTimer();
+  if (dockEl.value && props.fluid) {
+    dockEl.value.removeEventListener("mouseenter", showScrollbar);
+    dockEl.value.removeEventListener("mouseleave", hideScrollbar);
+    dockEl.value.removeEventListener("scroll", showScrollbar);
+  }
   document.removeEventListener("pointermove", onDocPointerMove);
   document.removeEventListener("pointerup", onDocPointerUp);
 });
@@ -208,12 +299,16 @@ onBeforeUnmount(() => {
   bottom: 35px;
 }
 
-.toolbar-dock.is-drop-target {
-  padding: 10px 14px;
-  border: 2px dashed var(--dock-border);
-  border-radius: var(--dock-radius);
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
+.toolbar-dock[data-position="top"] {
+  top: 35px;
+  right: 20px;
+  left: 20px;
+}
+
+.toolbar-dock[data-position="bottom"] {
+  right: 20px;
+  bottom: 35px;
+  left: 20px;
 }
 
 .toolbar-dock-row {
@@ -232,6 +327,46 @@ onBeforeUnmount(() => {
 .toolbar-dock.is-drag-target .toolbar-dock-row {
   border-color: var(--dock-item-border-hover) !important;
   box-shadow: 0 0 0 1.5px hsl(var(--s-h) var(--s-s) var(--s-l) / 25%);
+}
+
+/* fluid: 合并后的全宽图标栏 */
+.toolbar-dock.is-fluid {
+  align-items: flex-start;
+  padding: 10px 14px;
+  overflow: auto visible;
+  background: var(--dock-bg);
+  border: 1px solid var(--dock-border);
+  border-radius: var(--dock-radius);
+}
+
+.toolbar-dock.is-fluid .toolbar-dock-row {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: var(--dock-gap);
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+/* fluid 模式下拖拽高亮应用到外壳上 */
+.toolbar-dock.is-fluid.is-drag-target {
+  border-color: var(--dock-item-border-hover) !important;
+  box-shadow: 0 0 0 1.5px hsl(var(--s-h) var(--s-s) var(--s-l) / 25%);
+}
+
+.toolbar-dock.is-fluid.is-drag-target .toolbar-dock-row {
+  border-color: transparent !important;
+  box-shadow: none;
+}
+
+.toolbar-dock.is-drop-target {
+  padding: 10px 14px;
+  border: 2px dashed var(--dock-border);
+  border-radius: var(--dock-radius);
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
 }
 
 .icon-sort-move {
@@ -278,5 +413,53 @@ onBeforeUnmount(() => {
   display: block;
   width: 18px;
   height: 18px;
+}
+</style>
+
+<style>
+/* ====== 合并图标栏原生滚动条样式（Chrome/Edge/Safari） ====== */
+
+.toolbar-dock.is-fluid::-webkit-scrollbar {
+  height: 3px;
+}
+
+.toolbar-dock.is-fluid::-webkit-scrollbar-track {
+  margin: 0 14px;
+  background: transparent;
+}
+
+.toolbar-dock.is-fluid::-webkit-scrollbar-thumb {
+  background: hsl(var(--s-h) var(--s-s) var(--s-l) / 0%);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.toolbar-dock.is-fluid.show-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--s-h) var(--s-s) var(--s-l) / 35%);
+}
+
+.toolbar-dock.is-fluid::-webkit-scrollbar-button {
+  display: none;
+}
+
+.toolbar-dock.is-fluid::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 悬停滑块本体时加深 */
+.toolbar-dock.is-fluid::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--s-h) var(--s-s) var(--s-l) / 55%);
+}
+
+/* 拖拽滑块时最深 */
+.toolbar-dock.is-fluid::-webkit-scrollbar-thumb:active {
+  background: hsl(var(--s-h) var(--s-s) var(--s-l) / 70%);
+}
+
+/* ====== Firefox 滚动条 ====== */
+
+.toolbar-dock.is-fluid {
+  scrollbar-color: hsl(var(--s-h) var(--s-s) var(--s-l) / 35%) transparent;
+  scrollbar-width: thin;
 }
 </style>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="128"
+     height="128"
+     viewBox="0 0 512 512">
+  <!-- 外圈圆环（固定不动） -->
+  <path fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="32"
+        d="M112.91 128A191.85 191.85 0 0 0 64 254c-1.18 106.35 85.65 193.8 192 194c106.2.2 192-85.83 192-192c0-104.54-83.55-189.61-187.5-192a4.36 4.36 0 0 0-4.5 4.37V152" />
+
+  <!-- 中心指针：持续顺时针旋转 -->
+  <g>
+    <path fill="currentColor"
+          d="m233.38 278.63l-79-113a8.13 8.13 0 0 1 11.32-11.32l113 79a32.5 32.5 0 0 1-37.25 53.26a33.2 33.2 0 0 1-8.07-7.94" />
+    <!-- 旋转动画：绕中心 256,256 无限顺时针转 -->
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="0 256 256"
+      to="360 256 256"
+      dur="4s"
+      repeatCount="indefinite"
+    />
+  </g>
+</svg>

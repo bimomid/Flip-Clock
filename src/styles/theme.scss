@@ -35,6 +35,8 @@
   --flip-digit-text: hsl(var(--s-h) 60% 85%);
   --flip-separator: hsl(var(--s-h) var(--s-s) 60%);
   --flip-divider: hsl(var(--p-h) var(--p-s) 3% / 50%);
+  --ring-track: hsl(var(--p-h) calc(var(--p-s) - 14%) calc(var(--p-l) - 12%));
+  --ring-progress: hsl(var(--s-h) var(--s-s) var(--s-l));
 }
 
 [data-theme="dark"] {
@@ -67,4 +69,6 @@
   --flip-digit-text: hsl(var(--s-h) 50% 80%);
   --flip-separator: hsl(var(--s-h) var(--s-s) 50%);
   --flip-divider: hsl(var(--p-h) calc(var(--p-s) + 10%) 1% / 50%);
+  --ring-track: hsl(var(--p-h) calc(var(--p-s) + 14%) calc(var(--p-l) + 14%));
+  --ring-progress: hsl(var(--s-h) var(--s-s) var(--s-l));
 }
