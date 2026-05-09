@@ -49,8 +49,15 @@ const digitRanges = digitMaxValues.map((max) => Array.from({ length: max + 1 }, 
 const timeFormatStore = useTimeFormatStore();
 const soundStore = useSoundToggleStore();
 
-const flipClockAudio = new Audio(flipClockAudioSrc);
-flipClockAudio.volume = 0.6;
+let flipClockAudio: HTMLAudioElement | null = null;
+
+function getFlipClockAudio(): HTMLAudioElement {
+  if (!flipClockAudio) {
+    flipClockAudio = new Audio(flipClockAudioSrc);
+    flipClockAudio.volume = 0.6;
+  }
+  return flipClockAudio;
+}
 
 const currentDigits = ref(getDigitsFromTime());
 const previousDigits = ref([...currentDigits.value]);
@@ -96,8 +103,9 @@ function syncDigitsWithTime(now = new Date()) {
     }
   });
   if (anyChanged && soundStore.isSoundOn) {
-    flipClockAudio.currentTime = 0;
-    flipClockAudio.play().catch(() => {});
+    const audio = getFlipClockAudio();
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
   }
 }
 

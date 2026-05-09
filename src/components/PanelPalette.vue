@@ -24,7 +24,7 @@
               :disabled="!paletteStore.hasPrimaryCustom"
               @click="paletteStore.resetPrimary()"
             >
-              <span class="reset-icon">↺</span>
+              <span class="reset-icon" v-html="resetSvg" />
             </button>
           </div>
         </div>
@@ -51,7 +51,7 @@
               :disabled="!paletteStore.hasSecondaryCustom"
               @click="paletteStore.resetSecondary()"
             >
-              <span class="reset-icon">↺</span>
+              <span class="reset-icon" v-html="resetSvg" />
             </button>
           </div>
         </div>
@@ -67,6 +67,7 @@ import { computed, ref } from "vue";
 import { useThemeModeStore } from "@/stores/ThemeMode";
 import { useKeepPaletteStore, hexToHSL, hslToHex } from "@/stores/KeepPalette";
 import { showPalette } from "@/components/IconsConfig.vue";
+import resetSvg from "@/assets/svg/Func-Reset.svg?raw";
 
 const themeStore = useThemeModeStore();
 const paletteStore = useKeepPaletteStore();
@@ -217,10 +218,16 @@ function onCustomPick(event: Event) {
 }
 
 .reset-icon {
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
   color: var(--dock-item-color);
+}
+
+.reset-icon :deep(svg) {
+  width: 100%;
+  height: 100%;
 }
 
 .visually-hidden {

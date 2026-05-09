@@ -8,6 +8,7 @@ import {
   toValue,
   watch,
   onMounted,
+  onBeforeUnmount,
   type MaybeRefOrGetter,
   type WatchSource,
   type MaybeRef,
@@ -28,8 +29,14 @@ function update() {
   if (el.value) el.value.innerHTML = toValue(props.config.svg);
 }
 
+let stopWatch: (() => void) | undefined;
+
 onMounted(() => {
   update();
-  if (props.config.svgWatch) watch(props.config.svgWatch, update);
+  if (props.config.svgWatch) stopWatch = watch(props.config.svgWatch, update);
+});
+
+onBeforeUnmount(() => {
+  stopWatch?.();
 });
 </script>

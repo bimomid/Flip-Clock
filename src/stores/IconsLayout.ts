@@ -27,11 +27,22 @@ export const useIconsLayoutStore = defineStore(
       layout.value = { ...layout.value };
     }
 
+    function setIcons(pos: DockPosition, icons: string[]) {
+      layout.value[pos] = [...icons];
+      layout.value = { ...layout.value };
+    }
+
+    function clearIcons(pos: DockPosition) {
+      if (layout.value[pos].length === 0) return;
+      layout.value[pos] = [];
+      layout.value = { ...layout.value };
+    }
+
     function resetLayout() {
       layout.value = structuredClone(defaultLayout);
     }
 
-    return { layout, iconsAt, moveIcon, resetLayout };
+    return { layout, iconsAt, moveIcon, setIcons, clearIcons, resetLayout };
   },
   {
     persist: {
