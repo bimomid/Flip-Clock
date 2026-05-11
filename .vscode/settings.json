@@ -69,5 +69,8 @@
   "js/ts.updateImportsOnFileMove.enabled": "always", // 移动JS/TS文件时自动更新导入路径
   "html.format.indentInnerHtml": true, // HTML标签内部代码自动缩进
   "html.format.wrapLineLength": 100, // HTML代码自动换行长度100字符
-  "json.format.enable": true, // 开启JSON代码格式化功能
+  "json.format.enable": true,
+  "i18n-ally.localesPaths": [
+    "src/languages"
+  ], // 开启JSON代码格式化功能
 }
