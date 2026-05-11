@@ -10,13 +10,13 @@
       height: store.height + 'px',
     }"
   >
-    <div class="task-titlebar" @mousedown="onDragStart">
+    <div class="task-titlebar" @pointerdown="onDragStart">
       <span class="task-titlebar-text">{{ $t("taskWindow.title") }}</span>
     </div>
     <textarea v-model="store.content" class="task-textarea" placeholder="..." spellcheck="false" />
-    <div class="resize-handle resize-r" @mousedown="onResizeStart($event, 'r')" />
-    <div class="resize-handle resize-b" @mousedown="onResizeStart($event, 'b')" />
-    <div class="resize-handle resize-br" @mousedown="onResizeStart($event, 'br')" />
+    <div class="resize-handle resize-r" @pointerdown="onResizeStart($event, 'r')" />
+    <div class="resize-handle resize-b" @pointerdown="onResizeStart($event, 'b')" />
+    <div class="resize-handle resize-br" @pointerdown="onResizeStart($event, 'br')" />
   </div>
 </template>
 
@@ -36,17 +36,17 @@ let dsy = 0;
 let wsx = 0;
 let wsy = 0;
 
-function onDragStart(e: MouseEvent) {
+function onDragStart(e: PointerEvent) {
   isDragging.value = true;
   dsx = e.clientX;
   dsy = e.clientY;
   wsx = store.x;
   wsy = store.y;
-  document.addEventListener("mousemove", onDragMove);
-  document.addEventListener("mouseup", onDragEnd);
+  document.addEventListener("pointermove", onDragMove);
+  document.addEventListener("pointerup", onDragEnd);
 }
 
-function onDragMove(e: MouseEvent) {
+function onDragMove(e: PointerEvent) {
   const nx = wsx + (e.clientX - dsx);
   const ny = wsy + (e.clientY - dsy);
   const maxX = window.innerWidth - store.width;
@@ -57,8 +57,8 @@ function onDragMove(e: MouseEvent) {
 
 function onDragEnd() {
   isDragging.value = false;
-  document.removeEventListener("mousemove", onDragMove);
-  document.removeEventListener("mouseup", onDragEnd);
+  document.removeEventListener("pointermove", onDragMove);
+  document.removeEventListener("pointerup", onDragEnd);
 }
 
 // -- resize ----------------------------------------------------------
@@ -70,7 +70,7 @@ let rsy = 0;
 let rsw = 0;
 let rsh = 0;
 
-function onResizeStart(e: MouseEvent, dir: ResizeDir) {
+function onResizeStart(e: PointerEvent, dir: ResizeDir) {
   e.preventDefault();
   isResizing.value = true;
   rdir = dir;
@@ -78,11 +78,11 @@ function onResizeStart(e: MouseEvent, dir: ResizeDir) {
   rsy = e.clientY;
   rsw = store.width;
   rsh = store.height;
-  document.addEventListener("mousemove", onResizeMove);
-  document.addEventListener("mouseup", onResizeEnd);
+  document.addEventListener("pointermove", onResizeMove);
+  document.addEventListener("pointerup", onResizeEnd);
 }
 
-function onResizeMove(e: MouseEvent) {
+function onResizeMove(e: PointerEvent) {
   const dx = e.clientX - rsx;
   const dy = e.clientY - rsy;
   if (rdir === "r" || rdir === "br") {
@@ -96,8 +96,8 @@ function onResizeMove(e: MouseEvent) {
 function onResizeEnd() {
   isResizing.value = false;
   rdir = null;
-  document.removeEventListener("mousemove", onResizeMove);
-  document.removeEventListener("mouseup", onResizeEnd);
+  document.removeEventListener("pointermove", onResizeMove);
+  document.removeEventListener("pointerup", onResizeEnd);
 }
 
 // -- clamp on mount ---------------------------------------------------
@@ -129,6 +129,7 @@ onMounted(() => {
   justify-content: center;
   height: 34px;
   padding: 0 14px;
+  touch-action: none;
   cursor: move;
   user-select: none;
   background: var(--dock-item-bg);
@@ -188,6 +189,7 @@ onMounted(() => {
 .resize-handle {
   position: absolute;
   z-index: 10;
+  touch-action: none;
 }
 
 .resize-r {
