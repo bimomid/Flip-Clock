@@ -35,6 +35,9 @@ import TaskWindow from "@/components/TaskWindow.vue";
 import { useFocusTimerStore } from "@/stores/FocusTimer";
 import { useCountClockStore } from "@/stores/CountClock";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
+import { useKeepAwake } from "@/composables/useKeepAwake";
+
+useKeepAwake();
 
 const focusStore = useFocusTimerStore();
 const countStore = useCountClockStore();
