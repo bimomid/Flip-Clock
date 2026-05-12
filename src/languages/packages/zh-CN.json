@@ -45,6 +45,26 @@
     "home": "主页",
     "tasks": "任务列表",
     "visibility": "显示/隐藏",
-    "language": "语言"
+    "language": "语言",
+    "update": "检查更新"
+  },
+  "updateDialog": {
+    "checking": "正在检查更新...",
+    "available": "发现新版本 {version}",
+    "download": "下载",
+    "downloading": "正在下载...",
+    "downloadComplete": "下载完成！",
+    "install": "立即安装",
+    "later": "稍后",
+    "upToDate": "已是最新版本！",
+    "portableTitle": "检测到便携版",
+    "portableMessage": "便携版不支持自动更新，是否从 GitHub 下载最新版本？",
+    "downloadPortable": "下载便携版",
+    "downloadFromGitHub": "GitHub 发布页",
+    "openFolder": "打开文件夹",
+    "cancel": "取消",
+    "close": "关闭",
+    "error": "检查更新失败",
+    "retry": "重试"
   }
 }

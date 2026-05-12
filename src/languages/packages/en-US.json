@@ -45,6 +45,26 @@
     "home": "Home",
     "tasks": "Task List",
     "visibility": "Show/Hide",
-    "language": "Language"
+    "language": "Language",
+    "update": "Check for Updates"
+  },
+  "updateDialog": {
+    "checking": "Checking for updates...",
+    "available": "Version {version} is available",
+    "download": "Download",
+    "downloading": "Downloading...",
+    "downloadComplete": "Download complete!",
+    "install": "Install Now",
+    "later": "Later",
+    "upToDate": "You're up to date!",
+    "portableTitle": "Portable Version Detected",
+    "portableMessage": "Auto-update is not supported for the portable version. Download the latest version from GitHub?",
+    "downloadPortable": "Download Portable",
+    "downloadFromGitHub": "GitHub Releases",
+    "openFolder": "Open Folder",
+    "cancel": "Cancel",
+    "close": "Close",
+    "error": "Update check failed",
+    "retry": "Retry"
   }
 }

@@ -19,6 +19,7 @@
     <PanelPalette />
     <LanguagePicker />
     <TaskWindow />
+    <UpdateDialog v-if="showUpdateDialog" />
   </main>
 </template>
 
@@ -27,7 +28,12 @@ import { ref, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import FlipClock from "@/components/FlipClock.vue";
 import FocusMode from "@/components/FocusMode.vue";
 import CountClock from "@/components/CountClock.vue";
-import IconsConfig, { isIconsHidden, manualIconOverride } from "@/components/IconsConfig.vue";
+import IconsConfig, {
+  isIconsHidden,
+  manualIconOverride,
+  showUpdateDialog,
+} from "@/components/IconsConfig.vue";
+import UpdateDialog from "@/components/UpdateDialog.vue";
 import DockRow from "@/components/DockRow.vue";
 import PanelPalette from "@/components/PanelPalette.vue";
 import LanguagePicker from "@/components/LanguagePicker.vue";

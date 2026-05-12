@@ -71,6 +71,6 @@
   "html.format.wrapLineLength": 100, // HTML代码自动换行长度100字符
   "json.format.enable": true,
   "i18n-ally.localesPaths": [
-    "src/languages"
+    "src/languages/packages"
   ], // 开启JSON代码格式化功能
 }

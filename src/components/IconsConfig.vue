@@ -28,16 +28,19 @@ import countClockSvg from "@/assets/svg/Model-CountClock.svg?raw";
 import homeSvg from "@/assets/svg/Model-Home.svg?raw";
 import tasksSvg from "@/assets/svg/Model-Tasks.svg?raw";
 import languageSvg from "@/assets/svg/Model-Language.svg?raw";
+import updateSvg from "@/assets/svg/Model-Update.svg?raw";
 
 export const showPalette = ref(false);
 export const showLanguagePicker = ref(false);
 export const isIconsHidden = ref(false);
 export const manualIconOverride = ref(false);
+export const hasUpdate = ref(false);
+export const showUpdateDialog = ref(false);
 
 export const defaultLayout: Record<DockPosition, string[]> = {
   "top-left": ["home", "alarm-clock", "count-clock", "tasks"],
   "top-right": ["theme", "palette", "time-format", "sound"],
-  "bottom-left": ["loading", "language"],
+  "bottom-left": ["loading", "language", "update"],
   "bottom-right": ["visibility"],
   top: [],
   bottom: [],
@@ -173,18 +176,36 @@ export const iconConfigMap: Record<string, IconConfig> = {
       showLanguagePicker.value = !showLanguagePicker.value;
     },
   },
+  update: {
+    svg: updateSvg,
+    svgWatch: () => hasUpdate.value,
+    color: "var(--theme-icon-update)",
+    onClick: () => {
+      showUpdateDialog.value = true;
+    },
+  },
 };
 </script>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, watch } from "vue";
 import { useKeepPaletteStore } from "@/stores/KeepPalette";
+import { useAppUpdate } from "@/utils/useAppUpdate";
 
 const paletteStore = useKeepPaletteStore();
+const { state, init: initUpdater } = useAppUpdate();
+
+watch(
+  () => state.value.status,
+  (s) => {
+    hasUpdate.value = s === "available";
+  }
+);
 
 onMounted(() => {
   themeStore.initTheme();
   paletteStore.init();
+  initUpdater();
 });
 </script>
 
@@ -205,6 +226,7 @@ onMounted(() => {
   --theme-icon-hidden: #6b7280;
   --theme-icon-visible: #22c55e;
   --theme-icon-language: #a855f7;
+  --theme-icon-update: #8b5cf6;
 }
 
 :global(html) {
