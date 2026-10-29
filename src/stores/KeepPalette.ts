@@ -2,8 +2,6 @@ import { computed, ref, watch } from "vue";
 import { defineStore } from "pinia";
 import { useThemeModeStore } from "./ThemeMode";
 
-// ---- 颜色工具函数 ----
-
 interface HSL {
   h: number;
   s: number;
@@ -50,8 +48,6 @@ export function hexToHSL(hex: string): HSL | null {
   }
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
-
-// ---- 调色板 Store ----
 
 interface ColorOverrides {
   primary: HSL;
@@ -168,9 +164,7 @@ export const useKeepPaletteStore = defineStore(
                 darkOverrides: parsed.darkOverrides ?? parsed.dark ?? null,
               };
             }
-          } catch {
-            /* 数据损坏 */
-          }
+          } catch {}
           return { lightOverrides: null, darkOverrides: null };
         },
         serialize: JSON.stringify,

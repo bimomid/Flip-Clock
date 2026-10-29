@@ -1,7 +1,7 @@
 <template>
   <Transition name="palette">
-    <div v-if="showPalette" class="palette-backdrop" @click.self="showPalette = false">
-      <div class="palette-panel">
+    <div v-if="ui.showPalette" class="palette-backdrop" @click.self="ui.showPalette = false">
+      <div class="palette-panel" role="dialog" aria-modal="true" :aria-label="$t('icons.palette')">
         <div class="palette-row">
           <span class="palette-row-label">{{ $t("palette.primaryColor") }}</span>
           <div class="palette-dots">
@@ -67,8 +67,18 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useThemeModeStore } from "@/stores/ThemeMode";
 import { useKeepPaletteStore, hexToHSL, hslToHex } from "@/stores/KeepPalette";
-import { showPalette } from "@/components/IconsConfig.vue";
+import { useIconsUIStore } from "@/stores/IconsUI";
+import { useEscapeKey } from "@/composables/useEscapeKey";
 import resetSvg from "@/assets/svg/Func-Reset.svg?raw";
+
+const ui = useIconsUIStore();
+
+useEscapeKey(
+  computed(() => ui.showPalette),
+  () => {
+    ui.showPalette = false;
+  }
+);
 
 const { t } = useI18n();
 

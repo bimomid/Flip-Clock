@@ -2,14 +2,12 @@
   "locale": {
     "name": "English"
   },
-  "app": {
-    "title": "Flip Clock"
-  },
   "countClock": {
     "pause": "Pause",
     "start": "Start",
     "lap": "Lap",
-    "reset": "Reset"
+    "reset": "Reset",
+    "moreLaps": "{count} more"
   },
   "focusTimePicker": {
     "confirm": "Confirm"
@@ -45,6 +43,21 @@
     "home": "Home",
     "tasks": "Task List",
     "visibility": "Show/Hide",
-    "language": "Language"
+    "language": "Language",
+    "update": "Check for updates"
+  },
+  "updater": {
+    "title": "Update available",
+    "titleIdle": "Updates",
+    "checking": "Checking for updates…",
+    "available": "A new version is available. Download it now?",
+    "downloading": "Downloading update…",
+    "ready": "Update ready. Restart to apply.",
+    "failed": "Failed to check or download the update.",
+    "download": "Download & install",
+    "restart": "Restart now",
+    "retry": "Retry",
+    "later": "Later",
+    "upToDate": "You are on the latest version (v{version})"
   }
 }

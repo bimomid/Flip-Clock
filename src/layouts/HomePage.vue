@@ -2,7 +2,6 @@
   <main ref="homeRef" class="home-page-contain">
     <DockRow row="top" />
     <DockRow row="bottom" />
-    <IconsConfig />
 
     <div ref="clockArea" class="clock-area">
       <Transition
@@ -19,33 +18,75 @@
     <PanelPalette />
     <LanguagePicker />
     <TaskWindow />
+    <UpdateDialog />
   </main>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+  defineAsyncComponent,
+  type Component,
+} from "vue";
 import FlipClock from "@/components/FlipClock.vue";
-import FocusMode from "@/components/FocusMode.vue";
-import CountClock from "@/components/CountClock.vue";
-import IconsConfig, { isIconsHidden, manualIconOverride } from "@/components/IconsConfig.vue";
 import DockRow from "@/components/DockRow.vue";
-import PanelPalette from "@/components/PanelPalette.vue";
-import LanguagePicker from "@/components/LanguagePicker.vue";
-import TaskWindow from "@/components/TaskWindow.vue";
 import { useFocusTimerStore } from "@/stores/FocusTimer";
 import { useCountClockStore } from "@/stores/CountClock";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
+import { useIconsUIStore } from "@/stores/IconsUI";
 import { useKeepAwake } from "@/composables/useKeepAwake";
+import { useIconDrag } from "@/composables/useIconDrag";
+import { DOCK_MARGIN, DOCK_SIDE, PILL_HEIGHT, pillWidth } from "@/config/dock";
+import type { DockPosition } from "@/stores/IconsDrag";
+
+function lazy(loader: () => Promise<Component>) {
+  return defineAsyncComponent({
+    loader,
+    delay: 120,
+    timeout: 10000,
+    onError(error, _retry, fail) {
+      // Never leave the view-transition lock on: a failed chunk would otherwise disable
+      // every dock icon until the app is restarted.
+      unlockToggle();
+      console.error("[flip-clock] async view failed to load", error);
+      fail();
+    },
+  });
+}
+
+const FocusMode = lazy(() => import("@/components/FocusMode.vue"));
+const CountClock = lazy(() => import("@/components/CountClock.vue"));
+const PanelPalette = lazy(() => import("@/components/PanelPalette.vue"));
+const LanguagePicker = lazy(() => import("@/components/LanguagePicker.vue"));
+const TaskWindow = lazy(() => import("@/components/TaskWindow.vue"));
+const UpdateDialog = lazy(() => import("@/components/UpdateDialog.vue"));
 
 useKeepAwake();
+useIconDrag();
 
 const focusStore = useFocusTimerStore();
 const countStore = useCountClockStore();
+const ui = useIconsUIStore();
+
+const VIEW_LOCK_FALLBACK_MS = 1500;
+let unlockTimer: ReturnType<typeof setTimeout> | null = null;
 
 function lockToggle() {
   focusStore.lockToggle();
+  if (unlockTimer) clearTimeout(unlockTimer);
+  // Failsafe: the transition unlock must not depend on an animation event that may never fire.
+  unlockTimer = setTimeout(unlockToggle, VIEW_LOCK_FALLBACK_MS);
 }
+
 function unlockToggle() {
+  if (unlockTimer) {
+    clearTimeout(unlockTimer);
+    unlockTimer = null;
+  }
   focusStore.unlockToggle();
 }
 
@@ -53,18 +94,7 @@ const layoutStore = useIconsLayoutStore();
 const homeRef = ref<HTMLElement | null>(null);
 const clockArea = ref<HTMLElement | null>(null);
 
-const ICON_SIZE = 38;
-const ICON_GAP = 12;
-const PILL_PAD = 14;
-const PILL_HEIGHT = 58;
-const DOCK_MARGIN = 35;
-const DOCK_SIDE = 20;
 const OVERLAP_MARGIN = 20;
-
-function pillWidth(count: number): number {
-  if (count === 0) return 0;
-  return PILL_PAD * 2 + 2 + count * ICON_SIZE + (count - 1) * ICON_GAP;
-}
 
 function checkOverlap() {
   const container = homeRef.value;
@@ -82,9 +112,7 @@ function checkOverlap() {
 
   const layout = layoutStore.layout;
 
-  type DockPos = "top-left" | "top-right" | "bottom-left" | "bottom-right" | "top" | "bottom";
-
-  function hits(pos: DockPos, merged: boolean): boolean {
+  function hits(pos: DockPosition, merged: boolean): boolean {
     const count = layout[pos].length;
     if (count === 0) return false;
 
@@ -132,9 +160,9 @@ function checkOverlap() {
     );
   }
 
-  if (manualIconOverride.value) return;
+  if (ui.manualIconOverride) return;
 
-  isIconsHidden.value =
+  ui.isIconsHidden =
     hits("top-left", false) ||
     hits("top-right", false) ||
     hits("bottom-left", false) ||
@@ -155,6 +183,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
+  unlockToggle();
 });
 
 watch(
@@ -170,6 +199,16 @@ watch(
     nextTick(checkOverlap);
   }
 );
+
+// Dock icon count changes (drag, layout reset, merge/split) move the pill, so the overlap
+// verdict has to be recomputed even though the container size does not change.
+watch(
+  () => layoutStore.layout,
+  () => {
+    nextTick(checkOverlap);
+  },
+  { deep: true }
+);
 </script>
 
 <style scoped>
@@ -181,7 +220,9 @@ watch(
   justify-content: center;
   width: 100vw;
   height: 100vh;
-  padding: 24px;
+  height: 100dvh;
+  padding: calc(24px + var(--safe-top)) calc(24px + var(--safe-right))
+    calc(24px + var(--safe-bottom)) calc(24px + var(--safe-left));
 }
 
 .clock-switch-enter-active,

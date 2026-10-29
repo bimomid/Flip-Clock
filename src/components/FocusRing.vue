@@ -92,10 +92,15 @@ const ballY = computed(() => 100 - R * Math.cos(angle.value));
   font-variant-numeric: tabular-nums;
   color: var(--app-text);
   cursor: pointer;
-  outline: none;
   background: none;
   border: none;
+  border-radius: 999px;
   transform: translate(-50%, -50%);
+}
+
+.ring-center:focus-visible {
+  outline: 2px solid var(--ring-progress);
+  outline-offset: 4px;
 }
 
 .ring-center:hover {

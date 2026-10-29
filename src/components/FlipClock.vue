@@ -1,8 +1,8 @@
 <template>
   <div class="clock-container">
-    <template v-for="(group, groupIndex) in digitGroups" :key="group[0]">
+    <template v-for="(group, groupIndex) in digitGroups" :key="groupIndex">
       <div v-if="groupIndex > 0" class="separator" aria-hidden="true"></div>
-      <div class="digit-group">
+      <div class="digit-group" aria-hidden="true">
         <div
           v-for="digitIndex in group"
           :key="digitIndex"
@@ -10,25 +10,31 @@
           :class="{ animating: isAnimating[digitIndex] }"
         >
           <div
-            v-for="digitValue in digitRanges[digitIndex]"
-            :key="digitValue"
-            class="digit"
-            :class="{
-              current: currentDigits[digitIndex] === digitValue,
-              previous: isAnimating[digitIndex] && previousDigits[digitIndex] === digitValue,
-            }"
+            v-if="isAnimating[digitIndex]"
+            :key="`prev-${previousDigits[digitIndex]}`"
+            class="digit previous"
+            aria-hidden="true"
           >
             <div class="upper">
-              <div class="digit-char">{{ digitValue }}</div>
+              <div class="digit-char">{{ previousDigits[digitIndex] }}</div>
             </div>
             <div class="lower">
-              <div class="digit-char">{{ digitValue }}</div>
+              <div class="digit-char">{{ previousDigits[digitIndex] }}</div>
+            </div>
+          </div>
+          <div :key="currentDigits[digitIndex]" class="digit current">
+            <div class="upper">
+              <div class="digit-char">{{ currentDigits[digitIndex] }}</div>
+            </div>
+            <div class="lower">
+              <div class="digit-char">{{ currentDigits[digitIndex] }}</div>
             </div>
           </div>
         </div>
       </div>
     </template>
-    <div v-if="ampm" class="clock-ampm">{{ ampm }}</div>
+    <div v-if="ampm" class="clock-ampm" aria-hidden="true">{{ ampm }}</div>
+    <span class="sr-only" aria-live="off">{{ accessibleTime }}</span>
   </div>
 </template>
 
@@ -38,13 +44,13 @@ import { useTimeFormatStore } from "@/stores/TimeFormat";
 import { useSoundToggleStore } from "@/stores/SoundToggle";
 import flipClockAudioSrc from "@/assets/mp3/FlipClock.mp3";
 
-const digitMaxValues = [2, 9, 5, 9, 5, 9] as const;
+const DIGIT_COUNT = 6;
 const digitGroups = [
   [0, 1],
   [2, 3],
   [4, 5],
 ] as const;
-const digitRanges = digitMaxValues.map((max) => Array.from({ length: max + 1 }, (_, i) => i));
+const ANIM_MS = 1050;
 
 const timeFormatStore = useTimeFormatStore();
 const soundStore = useSoundToggleStore();
@@ -61,8 +67,17 @@ function getFlipClockAudio(): HTMLAudioElement {
 
 const currentDigits = ref(getDigitsFromTime());
 const previousDigits = ref([...currentDigits.value]);
-const isAnimating = ref(digitMaxValues.map(() => false));
+const isAnimating = ref(Array.from({ length: DIGIT_COUNT }, () => false));
+const animTimers: (ReturnType<typeof setTimeout> | null)[] = Array.from(
+  { length: DIGIT_COUNT },
+  () => null
+);
 const timeRef = ref(new Date());
+
+const accessibleTime = computed(() => {
+  const [h1, h2, m1, m2, s1, s2] = currentDigits.value;
+  return `${h1}${h2}:${m1}${m2}:${s1}${s2}`;
+});
 
 const ampm = computed(() => {
   if (timeFormatStore.is24h) return null;
@@ -94,13 +109,16 @@ function syncDigitsWithTime(now = new Date()) {
   timeRef.value = now;
   let anyChanged = false;
   getDigitsFromTime(now).forEach((digit, i) => {
-    const changed = digit !== currentDigits.value[i];
-    isAnimating.value[i] = changed;
-    if (changed) {
-      previousDigits.value[i] = currentDigits.value[i];
-      currentDigits.value[i] = digit;
-      anyChanged = true;
-    }
+    if (digit === currentDigits.value[i]) return;
+    previousDigits.value[i] = currentDigits.value[i];
+    currentDigits.value[i] = digit;
+    isAnimating.value[i] = true;
+    anyChanged = true;
+    if (animTimers[i]) clearTimeout(animTimers[i]);
+    animTimers[i] = setTimeout(() => {
+      isAnimating.value[i] = false;
+      animTimers[i] = null;
+    }, ANIM_MS);
   });
   if (anyChanged && soundStore.isSoundOn) {
     const audio = getFlipClockAudio();
@@ -142,6 +160,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener("visibilitychange", handleVisibilityChange);
   stopTimer();
+  animTimers.forEach((t) => t && clearTimeout(t));
 });
 </script>
 
@@ -255,7 +274,6 @@ onBeforeUnmount(() => {
   height: 50%;
   overflow: hidden;
   backface-visibility: hidden;
-  will-change: transform;
 }
 
 .upper {
@@ -316,11 +334,13 @@ onBeforeUnmount(() => {
 .animating .digit.previous .upper {
   z-index: 2;
   animation: turn-up 0.5s linear both;
+  will-change: transform;
 }
 
 .animating .digit.current .lower {
   z-index: 2;
   animation: turn-down 0.5s 0.5s linear both;
+  will-change: transform;
 }
 
 @keyframes turn-down {

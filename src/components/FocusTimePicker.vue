@@ -1,6 +1,6 @@
 <template>
   <div class="picker-backdrop" @click.self="$emit('close')">
-    <div class="picker-panel">
+    <div class="picker-panel" role="dialog" aria-modal="true" :aria-label="$t('icons.alarm-clock')">
       <div class="picker-columns">
         <template v-for="(col, colIdx) in columns" :key="col.key">
           <span v-if="colIdx > 0" class="picker-colon">:</span>
@@ -35,8 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onBeforeUnmount } from "vue";
-import { pad2 } from "@/stores/FocusTimer";
+import { computed, reactive, ref, onBeforeUnmount, onMounted } from "vue";
+import { pad2 } from "@/utils/time";
 
 const ITEM_HEIGHT = 36;
 const VISIBLE_ITEMS = 5;
@@ -53,19 +53,20 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-// Base value arrays
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === "Escape") emit("close");
+}
+
 const hourValues = Array.from({ length: 25 }, (_, i) => i);
 const minuteValues = Array.from({ length: 60 }, (_, i) => i);
 const secondValues = Array.from({ length: 60 }, (_, i) => i);
 
-// Tripled for continuous scrolling
 const tripledHours = [...hourValues, ...hourValues, ...hourValues];
 const tripledMinutes = [...minuteValues, ...minuteValues, ...minuteValues];
 const tripledSeconds = [...secondValues, ...secondValues, ...secondValues];
 
 const MAX = { hours: 25, minutes: 60, seconds: 60 };
 
-// Position in tripled list — starts at middle copy
 const listIndex = reactive({
   hours: MAX.hours + props.hours,
   minutes: MAX.minutes + props.minutes,
@@ -125,11 +126,14 @@ function shiftIndex(col: "hours" | "minutes" | "seconds", delta: number) {
   listIndex[col] += delta;
 }
 
-onBeforeUnmount(() => {
-  if (recenterTimer) clearTimeout(recenterTimer);
+onMounted(() => {
+  window.addEventListener("keydown", onKeydown);
 });
 
-// --- interactions ---
+onBeforeUnmount(() => {
+  if (recenterTimer) clearTimeout(recenterTimer);
+  window.removeEventListener("keydown", onKeydown);
+});
 
 function onClickItem(col: "hours" | "minutes" | "seconds", targetIdx: number) {
   listIndex[col] = targetIdx;
@@ -141,7 +145,6 @@ function onWheel(col: "hours" | "minutes" | "seconds", e: WheelEvent) {
   scheduleRecenter();
 }
 
-// --- drag ---
 const dragCol = ref<"hours" | "minutes" | "seconds" | null>(null);
 let dragStartY = 0;
 let dragStartIdx = 0;

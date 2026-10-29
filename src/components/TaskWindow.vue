@@ -29,7 +29,6 @@ const store = useTaskStore();
 const MIN_W = 220;
 const MIN_H = 160;
 
-// -- drag ------------------------------------------------------------
 const isDragging = ref(false);
 let dsx = 0;
 let dsy = 0;
@@ -61,7 +60,6 @@ function onDragEnd() {
   document.removeEventListener("pointerup", onDragEnd);
 }
 
-// -- resize ----------------------------------------------------------
 type ResizeDir = "r" | "b" | "br";
 const isResizing = ref(false);
 let rdir: ResizeDir | null = null;
@@ -100,7 +98,6 @@ function onResizeEnd() {
   document.removeEventListener("pointerup", onResizeEnd);
 }
 
-// -- clamp on mount ---------------------------------------------------
 onMounted(() => {
   store.x = Math.max(0, Math.min(store.x, window.innerWidth - store.width));
   store.y = Math.max(0, Math.min(store.y, window.innerHeight - 80));
@@ -152,9 +149,13 @@ onMounted(() => {
   line-height: 1.7;
   color: var(--app-text);
   resize: none;
-  outline: none;
   background: transparent;
   border: none;
+}
+
+.task-textarea:focus-visible {
+  outline: 2px solid var(--ring-progress);
+  outline-offset: -2px;
 }
 
 .task-textarea::placeholder {
@@ -185,7 +186,6 @@ onMounted(() => {
   user-select: none;
 }
 
-/* resize handles */
 .resize-handle {
   position: absolute;
   z-index: 10;

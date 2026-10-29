@@ -35,9 +35,10 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useIconsDragStore, type DockPosition } from "@/stores/IconsDrag";
 import { useIconsLayoutStore } from "@/stores/IconsLayout";
-import { iconConfigMap, isIconsHidden } from "@/components/IconsConfig.vue";
+import { iconConfigMap } from "@/config/icons";
+import { useIconsUIStore } from "@/stores/IconsUI";
 import SvgIcon from "@/components/SvgIcon.vue";
-import IconsDrag, { tracking, DRAG_THRESHOLD } from "@/components/IconsDrag.vue";
+import IconsDrag from "@/components/IconsDrag.vue";
 
 const props = defineProps<{
   position: DockPosition;
@@ -47,6 +48,7 @@ const props = defineProps<{
 }>();
 
 const dragStore = useIconsDragStore();
+const ui = useIconsUIStore();
 const layoutStore = useIconsLayoutStore();
 
 const dockEl = ref<HTMLElement | null>(null);
@@ -69,7 +71,7 @@ const displayIcons = computed<DisplayIcon[]>(() => {
     .filter((id) => id !== dragStore.iconId)
     .map((id) => ({ id }));
 
-  if (isIconsHidden.value) {
+  if (ui.isIconsHidden) {
     icons = icons.filter((icon) => icon.id === "visibility");
   }
 
@@ -98,111 +100,6 @@ function getInsertIndex(cx: number): number {
   }
   return realIdx;
 }
-
-// ---- 拖拽：文档级 pointermove / pointerup ----
-
-function onDocPointerMove(e: PointerEvent) {
-  if (!tracking.iconId) return;
-  const dx = e.clientX - tracking.startX;
-  const dy = e.clientY - tracking.startY;
-  if (!tracking.hasMoved && Math.abs(dx) + Math.abs(dy) < DRAG_THRESHOLD) return;
-
-  if (!tracking.hasMoved) {
-    tracking.hasMoved = true;
-    tracking.wasDragged = true;
-
-    dragStore.iconId = tracking.iconId;
-    dragStore.ghostColor = tracking.ghostColor;
-    dragStore.sourceZone = tracking.sourceZone;
-    dragStore.active = true;
-    document.body.style.cursor = "grabbing";
-  }
-
-  dragStore.globalHitTest(e.clientX, e.clientY);
-
-  // 合并模式下，拖拽图标靠近边界时自动滚动
-  if (props.fluid && dockEl.value) {
-    autoScrollNearEdge(e.clientX);
-  }
-}
-
-// ---- 边缘自动滚动 ----
-
-let autoScrollRafId: number | null = null;
-
-function autoScrollNearEdge(px: number) {
-  if (!dockEl.value) return;
-  const r = dockEl.value.getBoundingClientRect();
-  const edgeSize = 50; // 触发区域宽度
-  const minSpeed = 2;
-  const maxSpeed = 12;
-
-  let speed = 0;
-
-  if (px < r.left + edgeSize) {
-    // 靠近左边界
-    const dist = r.left + edgeSize - px;
-    speed = -minSpeed - (dist / edgeSize) * (maxSpeed - minSpeed);
-  } else if (px > r.right - edgeSize) {
-    // 靠近右边界
-    const dist = px - (r.right - edgeSize);
-    speed = minSpeed + (dist / edgeSize) * (maxSpeed - minSpeed);
-  }
-
-  if (speed !== 0) {
-    if (!autoScrollRafId) {
-      const el = dockEl.value;
-      function step() {
-        el.scrollLeft += speed;
-        autoScrollRafId = requestAnimationFrame(step);
-      }
-      autoScrollRafId = requestAnimationFrame(step);
-    }
-  } else {
-    stopAutoScroll();
-  }
-}
-
-function stopAutoScroll() {
-  if (autoScrollRafId) {
-    cancelAnimationFrame(autoScrollRafId);
-    autoScrollRafId = null;
-  }
-}
-
-function onDocPointerUp() {
-  document.body.style.cursor = "";
-
-  let didDrop = false;
-
-  if (tracking.hasMoved && dragStore.sourceZone && dragStore.iconId) {
-    const target = dragStore.targetZone ?? tracking.dropZones[0];
-    let insertIdx =
-      dragStore.targetInsert >= 0 ? dragStore.targetInsert : layoutStore.iconsAt(target).length;
-
-    if (dragStore.sourceZone === target) {
-      const srcIdx = layoutStore.iconsAt(target).indexOf(dragStore.iconId);
-      if (srcIdx !== -1 && insertIdx > srcIdx) insertIdx++;
-    }
-
-    layoutStore.moveIcon(dragStore.iconId, dragStore.sourceZone, target, insertIdx);
-    didDrop = true;
-  }
-
-  // 移动端手指轻触时的微小抖动可能超过 DRAG_THRESHOLD 导致 hasMoved 被置为 true，
-  // 但如果没有实际完成拖拽（didDrop = false），应将 wasDragged 重置，避免误吞后续的 click 事件。
-  if (!didDrop) {
-    tracking.wasDragged = false;
-  }
-
-  dragStore.endDrag();
-  stopAutoScroll();
-  tracking.iconId = null;
-  tracking.sourceZone = null;
-  tracking.hasMoved = false;
-}
-
-// ---- 滚动条显隐控制（JS 管理，避免 CSS :hover 不可靠） ----
 
 const scrollbarVisible = ref(false);
 let scrollbarHideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -240,26 +137,23 @@ onMounted(() => {
     });
 
     if (props.fluid) {
+      dragStore.setFluidDock(dockEl.value);
       dockEl.value.addEventListener("mouseenter", showScrollbar);
       dockEl.value.addEventListener("mouseleave", hideScrollbar);
       dockEl.value.addEventListener("scroll", showScrollbar);
     }
   }
-  document.addEventListener("pointermove", onDocPointerMove);
-  document.addEventListener("pointerup", onDocPointerUp);
 });
 
 onBeforeUnmount(() => {
   dragStore.unregisterDock(props.position);
-  stopAutoScroll();
   cancelScrollbarTimer();
   if (dockEl.value && props.fluid) {
+    if (dragStore.fluidDockEl === dockEl.value) dragStore.setFluidDock(null);
     dockEl.value.removeEventListener("mouseenter", showScrollbar);
     dockEl.value.removeEventListener("mouseleave", hideScrollbar);
     dockEl.value.removeEventListener("scroll", showScrollbar);
   }
-  document.removeEventListener("pointermove", onDocPointerMove);
-  document.removeEventListener("pointerup", onDocPointerUp);
 });
 </script>
 
@@ -284,35 +178,35 @@ onBeforeUnmount(() => {
 }
 
 .toolbar-dock[data-position="top-left"] {
-  top: 35px;
-  left: 20px;
+  top: calc(var(--dock-margin) + var(--safe-top));
+  left: calc(var(--dock-side) + var(--safe-left));
 }
 
 .toolbar-dock[data-position="top-right"] {
-  top: 35px;
-  right: 20px;
+  top: calc(var(--dock-margin) + var(--safe-top));
+  right: calc(var(--dock-side) + var(--safe-right));
 }
 
 .toolbar-dock[data-position="bottom-left"] {
-  bottom: 35px;
-  left: 20px;
+  bottom: calc(var(--dock-margin) + var(--safe-bottom));
+  left: calc(var(--dock-side) + var(--safe-left));
 }
 
 .toolbar-dock[data-position="bottom-right"] {
-  right: 20px;
-  bottom: 35px;
+  right: calc(var(--dock-side) + var(--safe-right));
+  bottom: calc(var(--dock-margin) + var(--safe-bottom));
 }
 
 .toolbar-dock[data-position="top"] {
-  top: 35px;
-  right: 20px;
-  left: 20px;
+  top: calc(var(--dock-margin) + var(--safe-top));
+  right: calc(var(--dock-side) + var(--safe-right));
+  left: calc(var(--dock-side) + var(--safe-left));
 }
 
 .toolbar-dock[data-position="bottom"] {
-  right: 20px;
-  bottom: 35px;
-  left: 20px;
+  right: calc(var(--dock-side) + var(--safe-right));
+  bottom: calc(var(--dock-margin) + var(--safe-bottom));
+  left: calc(var(--dock-side) + var(--safe-left));
 }
 
 .toolbar-dock-row {
@@ -333,7 +227,6 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 1.5px hsl(var(--s-h) var(--s-s) var(--s-l) / 25%);
 }
 
-/* fluid: 合并后的全宽图标栏 */
 .toolbar-dock.is-fluid {
   align-items: flex-start;
   padding: 10px 14px;
@@ -354,7 +247,6 @@ onBeforeUnmount(() => {
   border-radius: 0;
 }
 
-/* fluid 模式下拖拽高亮应用到外壳上 */
 .toolbar-dock.is-fluid.is-drag-target {
   border-color: var(--dock-item-border-hover) !important;
   box-shadow: 0 0 0 1.5px hsl(var(--s-h) var(--s-s) var(--s-l) / 25%);
@@ -396,7 +288,6 @@ onBeforeUnmount(() => {
   transform: scale(0.5);
 }
 
-/* 拖拽虚影 */
 .drag-ghost {
   position: fixed;
   z-index: 9999;
@@ -421,8 +312,6 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-/* ====== 合并图标栏原生滚动条样式（Chrome/Edge/Safari） ====== */
-
 .toolbar-dock.is-fluid::-webkit-scrollbar {
   height: 3px;
 }
@@ -450,17 +339,13 @@ onBeforeUnmount(() => {
   background: transparent;
 }
 
-/* 悬停滑块本体时加深 */
 .toolbar-dock.is-fluid::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--s-h) var(--s-s) var(--s-l) / 55%);
 }
 
-/* 拖拽滑块时最深 */
 .toolbar-dock.is-fluid::-webkit-scrollbar-thumb:active {
   background: hsl(var(--s-h) var(--s-s) var(--s-l) / 70%);
 }
-
-/* ====== Firefox 滚动条 ====== */
 
 @supports (-moz-appearance: none) {
   .toolbar-dock.is-fluid {

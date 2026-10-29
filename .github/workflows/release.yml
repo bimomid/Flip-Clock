@@ -1,0 +1,416 @@
+name: Release
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release, e.g. v0.2.0 (no version bump)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  VP_GIT_HOOKS: "0"
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Versions in sync
+        run: node scripts/sync-version.mjs --check
+      - name: Stylelint
+        run: pnpm exec stylelint "**/*.{css,scss,vue}"
+      - name: Format, lint & type check
+        run: pnpm check
+      - name: Test
+        run: pnpm test
+
+  plan:
+    name: Plan version
+    needs: verify
+    if: ${{ github.event_name != 'push' || github.ref_type != 'branch' || (!startsWith(github.event.head_commit.message || '', 'chore(release)') && !contains(github.event.head_commit.message || '', '[skip release]')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.bump.outputs.version || steps.manual.outputs.version }}
+      tag: ${{ steps.bump.outputs.tag || steps.manual.outputs.tag }}
+      skip: ${{ steps.bump.outputs.skip || steps.manual.outputs.skip }}
+      signing: ${{ steps.signing.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Detect updater signing key
+        id: signing
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          if [ -n "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::TAURI_SIGNING_PRIVATE_KEY is not configured; updater artifacts and latest.json will be skipped."
+          fi
+      - name: Resolve manual tag
+        id: manual
+        if: ${{ github.event_name == 'workflow_dispatch' || github.ref_type == 'tag' }}
+        shell: bash
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag="${INPUT_TAG:-$REF_NAME}"
+          [[ "$tag" == v* ]] || tag="v$tag"
+          version="${tag#v}"
+          if ! git rev-parse --verify --quiet "refs/tags/$tag" > /dev/null; then
+            echo "::error::tag $tag does not exist in this repository"
+            exit 1
+          fi
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$pkg" != "$version" ]; then
+            echo "::error::tag $tag does not match package.json version $pkg"
+            exit 1
+          fi
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "previous=$version"
+            echo "skip=false"
+          } >> "$GITHUB_OUTPUT"
+      - name: Sync with origin master
+        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin master
+      - name: Bump version from conventional commits
+        id: bump
+        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' }}
+        shell: bash
+        run: node scripts/bump-version.mjs
+      - name: Commit, tag and push
+        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' && steps.bump.outputs.skip != 'true' }}
+        shell: bash
+        env:
+          VERSION: ${{ steps.bump.outputs.version }}
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+          git commit -m "chore(release): ${VERSION} [skip release]"
+          git tag -a "${TAG}" -m "${TAG}"
+          git push origin "HEAD:master"
+          git push origin "refs/tags/${TAG}"
+
+  build-windows:
+    name: Windows (NSIS + MSI + portable)
+    needs: plan
+    if: ${{ needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' }}
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.tag }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: pnpm install --frozen-lockfile
+      - name: Build NSIS + MSI with updater signatures
+        if: ${{ needs.plan.outputs.signing == 'true' }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: pnpm tauri build --ci --bundles nsis,msi
+      - name: Build NSIS + MSI without updater signatures
+        if: ${{ needs.plan.outputs.signing != 'true' }}
+        run: |
+          '{"bundle":{"createUpdaterArtifacts":false}}' | Set-Content -Path tauri-ci.conf.json -Encoding utf8
+          pnpm tauri build --ci --bundles nsis,msi --config tauri-ci.conf.json
+          Remove-Item -Path tauri-ci.conf.json
+      - name: Collect installers and portable build
+        shell: pwsh
+        env:
+          SIGNING: ${{ needs.plan.outputs.signing }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $bundle = "src-tauri/target/release/bundle"
+          $out = "release-assets"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $patterns = @(
+            "$bundle/nsis/*-setup.exe"
+            "$bundle/nsis/*-setup.exe.sig"
+            "$bundle/msi/*.msi"
+            "$bundle/msi/*.msi.sig"
+          )
+          foreach ($pattern in $patterns) {
+            Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Copy-Item -Destination $out -Force
+          }
+          if (-not (Get-ChildItem -Path $out -Filter "*-setup.exe" -ErrorAction SilentlyContinue)) {
+            throw "NSIS installer (*-setup.exe) was not produced"
+          }
+          if (-not (Get-ChildItem -Path $out -Filter "*.msi" -ErrorAction SilentlyContinue)) {
+            throw "MSI installer was not produced"
+          }
+          if ($env:SIGNING -eq "true") {
+            if (-not (Get-ChildItem -Path $out -Filter "*-setup.exe.sig" -ErrorAction SilentlyContinue)) {
+              throw "NSIS signature (*-setup.exe.sig) was not produced"
+            }
+            if (-not (Get-ChildItem -Path $out -Filter "*.msi.sig" -ErrorAction SilentlyContinue)) {
+              throw "MSI signature (*.msi.sig) was not produced"
+            }
+          }
+          $portable = "src-tauri/target/release/flip-clock.exe"
+          if (-not (Test-Path -Path $portable)) { throw "portable binary not found: $portable" }
+          $portableName = "FlipClock-$($env:VERSION)-windows-x64-portable.exe"
+          Copy-Item -Path $portable -Destination (Join-Path $out $portableName) -Force
+          Compress-Archive -Path (Join-Path $out $portableName) -DestinationPath (Join-Path $out "FlipClock-$($env:VERSION)-windows-x64-portable.zip") -Force
+          Get-ChildItem -Path $out | Select-Object Name, Length | Format-Table -AutoSize
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 7
+
+  build-linux:
+    name: Linux (deb + AppImage)
+    needs: plan
+    if: ${{ needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.tag }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - run: pnpm install --frozen-lockfile
+      - name: Build deb + AppImage with updater signatures
+        if: ${{ needs.plan.outputs.signing == 'true' }}
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: pnpm tauri build --ci --bundles deb,appimage
+      - name: Build deb + AppImage without updater signatures
+        if: ${{ needs.plan.outputs.signing != 'true' }}
+        run: |
+          printf '%s' '{"bundle":{"createUpdaterArtifacts":false}}' > tauri-ci.conf.json
+          pnpm tauri build --ci --bundles deb,appimage --config tauri-ci.conf.json
+          rm -f tauri-ci.conf.json
+      - name: Collect Linux assets
+        shell: bash
+        env:
+          SIGNING: ${{ needs.plan.outputs.signing }}
+        run: |
+          set -euo pipefail
+          out=release-assets
+          mkdir -p "$out"
+          shopt -s nullglob
+          files=(
+            src-tauri/target/release/bundle/deb/*.deb
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
+            src-tauri/target/release/bundle/appimage/*.sig
+          )
+          for file in "${files[@]}"; do
+            cp "$file" "$out/"
+          done
+          compgen -G "$out/*.deb" > /dev/null || { echo "::error::missing .deb"; exit 1; }
+          compgen -G "$out/*.AppImage" > /dev/null || { echo "::error::missing .AppImage"; exit 1; }
+          if [ "$SIGNING" = "true" ]; then
+            compgen -G "$out/*.AppImage.tar.gz.sig" > /dev/null || {
+              echo "::error::missing AppImage updater signature"
+              exit 1
+            }
+          fi
+          ls -la "$out"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 7
+
+  build-android:
+    name: Android APK (optional)
+    needs: plan
+    if: ${{ needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    continue-on-error: true
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.tag }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v4
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;27.2.12479018" "platforms;android-36" "build-tools;35.0.0"
+          echo "NDK_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT}}/ndk/27.2.12479018" >> "$GITHUB_ENV"
+      - run: pnpm install --frozen-lockfile
+      - name: Build debug APK
+        run: pnpm tauri android build --debug --apk --ci
+      - name: Collect APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          mapfile -t apks < <(find src-tauri/gen/android/app/build/outputs/apk -name "*.apk" -type f)
+          if [ "${#apks[@]}" -eq 0 ]; then
+            echo "::error::no APK was produced"
+            exit 1
+          fi
+          for apk in "${apks[@]}"; do
+            cp "$apk" "release-assets/FlipClock-${VERSION}-android-$(basename "$apk")"
+          done
+          ls -la release-assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-android
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub release
+    needs: [plan, build-windows, build-linux, build-android]
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' && needs.build-windows.result == 'success' && needs.build-linux.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.tag }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: release-assets
+          if-no-files-found: error
+      - name: Generate updater manifest (latest.json)
+        if: ${{ needs.plan.outputs.signing == 'true' }}
+        run: node scripts/make-latest-json.mjs release-assets "${{ github.repository }}" "${{ needs.plan.outputs.tag }}"
+      - name: Warn about skipped updater manifest
+        if: ${{ needs.plan.outputs.signing != 'true' }}
+        run: echo "::warning::TAURI_SIGNING_PRIVATE_KEY is missing, so latest.json is skipped and auto-update stays disabled for this release."
+      - name: Verify release assets
+        shell: bash
+        env:
+          SIGNING: ${{ needs.plan.outputs.signing }}
+        run: |
+          set -euo pipefail
+          missing=0
+          require() {
+            if ! compgen -G "release-assets/$1" > /dev/null; then
+              echo "::error::missing release asset: $1"
+              missing=1
+            fi
+          }
+          require "*-setup.exe"
+          require "*.msi"
+          require "*-portable.exe"
+          require "*-portable.zip"
+          require "*.deb"
+          require "*.AppImage"
+          if [ "$SIGNING" = "true" ]; then
+            require "*-setup.exe.sig"
+            require "*.AppImage.tar.gz"
+            require "*.AppImage.tar.gz.sig"
+            require "latest.json"
+          fi
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          ls -la release-assets
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.plan.outputs.tag }}
+          name: ${{ needs.plan.outputs.tag }}
+          generate_release_notes: true
+          prerelease: ${{ contains(needs.plan.outputs.version, '-') }}
+          files: release-assets/*
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

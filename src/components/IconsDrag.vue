@@ -1,5 +1,6 @@
 <template>
   <button
+    v-if="iconConfig"
     class="toolbar-dock-item"
     type="button"
     :aria-label="t(`icons.${iconId}`)"
@@ -17,29 +18,12 @@
   </button>
 </template>
 
-<script lang="ts">
-import { reactive } from "vue";
-import type { DockPosition } from "@/stores/IconsDrag";
-
-export const DRAG_THRESHOLD = 10;
-
-export const tracking = reactive({
-  iconId: null as string | null,
-  startX: 0,
-  startY: 0,
-  hasMoved: false,
-  wasDragged: false,
-  dropZones: [] as DockPosition[],
-  sourceZone: null as DockPosition | null,
-  ghostColor: "",
-});
-</script>
-
 <script setup lang="ts">
 import { computed, unref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useIconsDragStore } from "@/stores/IconsDrag";
-import { iconConfigMap } from "@/components/IconsConfig.vue";
+import { useIconsDragStore, type DockPosition } from "@/stores/IconsDrag";
+import { iconConfigMap } from "@/config/icons";
+import { tracking } from "@/composables/useIconDrag";
 import SvgIcon from "@/components/SvgIcon.vue";
 
 const { t } = useI18n();

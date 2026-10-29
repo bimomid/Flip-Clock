@@ -1,88 +1,78 @@
 {
   "name": "flip-clock",
+  "version": "0.2.0",
   "private": true,
-  "version": "0.1.0",
+  "description": "A versatile desktop time tool built with Vue 3 + Tauri",
+  "homepage": "https://github.com/bimomid/Flip-Clock#readme",
+  "bugs": {
+    "url": "https://github.com/bimomid/Flip-Clock/issues"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "bimomid",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bimomid/Flip-Clock.git"
+  },
   "type": "module",
   "scripts": {
-    "lint": "pnpm run lint:eslint && pnpm run lint:prettier && pnpm run lint:stylelint",
-    "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview",
+    "dev": "vp dev",
+    "build": "vp build",
+    "preview": "vp preview",
+    "lint": "vp check --fix && pnpm lint:style",
+    "lint:style": "stylelint --cache \"**/*.{css,scss,vue}\" --fix",
+    "format": "vp fmt",
+    "check": "vp check",
+    "check:fix": "vp check --fix",
+    "test": "vp test --run",
+    "test:watch": "vp test",
+    "version:sync": "vpx scripts/sync-version.mjs",
+    "version:check": "vpx scripts/sync-version.mjs --check",
+    "release:plan": "vpx scripts/bump-version.mjs --dry-run",
+    "release:bump": "vpx scripts/bump-version.mjs",
     "tauri": "tauri",
     "android:build": "pnpm tauri android build",
     "android:build:debug": "pnpm tauri android build --debug",
     "android:dev": "pnpm tauri android dev",
     "preinstall": "npx only-allow pnpm",
-    "lint:eslint": "eslint --cache \"src/**/*.{vue,ts,js}\" --fix",
-    "lint:prettier": "prettier --write \"**/*.{js,cjs,ts,json,css,scss,vue,html,md}\"",
-    "lint:stylelint": "stylelint --cache \"**/*.{css,scss,vue}\" --fix",
-    "lint:lint-staged": "lint-staged",
-    "prepare": "husky",
+    "prepare": "vp config",
     "commit": "git-cz"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-process": "^2.4.0",
+    "@tauri-apps/plugin-updater": "^2.14.0",
+    "pinia": "^3.0.4",
+    "pinia-plugin-persistedstate": "^4.7.1",
+    "vue": "^3.5.33",
+    "vue-i18n": "^9.14.5"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "@tauri-apps/cli": "^2",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "commitizen": "^4.3.1",
+    "cz-git": "^1.13.0",
+    "only-allow": "^1.2.2",
+    "postcss-html": "^1.8.1",
+    "sass": "^1.99.0",
+    "stylelint": "^17.16.0",
+    "stylelint-config-recess-order": "^7.9.0",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-scss": "^7.4.0",
+    "typescript": "~6.0.3",
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "^5.0.5"
   },
   "config": {
     "commitizen": {
       "path": "node_modules/cz-git"
     }
   },
-  "lint-staged": {
-    "*.{js,ts}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{cjs,json}": [
-      "prettier --write"
-    ],
-    "*.{vue,html}": [
-      "eslint --fix",
-      "prettier --write",
-      "stylelint --fix"
-    ],
-    "*.{scss,css}": [
-      "stylelint --fix",
-      "prettier --write"
-    ],
-    "*.md": [
-      "prettier --write"
-    ]
-  },
-  "dependencies": {
-    "@fontsource/jetbrains-mono": "^5.2.8",
-    "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2",
-    "pinia": "^3.0.4",
-    "pinia-plugin-persistedstate": "^4.7.1",
-    "vue": "^3.5.33",
-    "vue-i18n": "^9.14.5",
-    "vue-router": "^4.5.1"
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^20.5.3",
-    "@commitlint/config-conventional": "^20.5.3",
-    "@eslint/js": "^10.0.1",
-    "@tauri-apps/cli": "^2",
-    "@typescript-eslint/eslint-plugin": "^8.59.2",
-    "@typescript-eslint/parser": "^8.59.2",
-    "@vitejs/plugin-vue": "^6.0.6",
-    "commitizen": "^4.3.1",
-    "cz-git": "^1.13.0",
-    "eslint": "^10.3.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-vue": "^10.9.0",
-    "globals": "^17.6.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.4.0",
-    "postcss-html": "^1.8.1",
-    "prettier": "^3.8.3",
-    "sass": "^1.99.0",
-    "stylelint": "^17.11.0",
-    "stylelint-config-recess-order": "^7.7.0",
-    "stylelint-config-standard": "^40.0.0",
-    "stylelint-scss": "^7.0.0",
-    "typescript": "~6.0.3",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.10",
-    "vue-tsc": "^3.2.8"
+  "engines": {
+    "node": ">=24",
+    "pnpm": ">=10"
   }
 }

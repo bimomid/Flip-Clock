@@ -1,10 +1,11 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import alarmClockMp3Src from "@/assets/mp3/AlarmClock.mp3";
+import { formatClockTime } from "@/utils/time";
 
-export function pad2(n: number): string {
-  return String(n).padStart(2, "0");
-}
+// While the app is closed or suspended the countdown must not be blindly caught up:
+// reopening after days would otherwise fire the alarm out of nowhere.
+const MAX_CATCHUP_MS = 30 * 60 * 1000;
 
 let alarmAudio: HTMLAudioElement | null = null;
 
@@ -28,36 +29,21 @@ export const useFocusTimerStore = defineStore(
     const isPaused = ref(false);
     const hasFinished = ref(false);
     const lastTickTime = ref<number | null>(null);
-    const tickHandle = ref<ReturnType<typeof setInterval> | null>(null);
+    let tickHandle: ReturnType<typeof setInterval> | null = null;
 
-    // --- computed ---
     const progress = computed(() => {
       if (totalDuration.value <= 0) return 0;
       const p = 1 - remainingTime.value / totalDuration.value;
       return Math.max(0, Math.min(1, p));
     });
 
-    const hours = computed(() => Math.floor(remainingTime.value / 3600000));
-    const minutes = computed(() => Math.floor((remainingTime.value % 3600000) / 60000));
-    const seconds = computed(() => Math.floor((remainingTime.value % 60000) / 1000));
+    const formattedTime = computed(() => formatClockTime(remainingTime.value));
+    const formattedTotal = computed(() => formatClockTime(totalDuration.value));
 
-    const formattedTime = computed(
-      () => `${pad2(hours.value)}:${pad2(minutes.value)}:${pad2(seconds.value)}`
-    );
-
-    const totalHours = computed(() => Math.floor(totalDuration.value / 3600000));
-    const totalMinutes = computed(() => Math.floor((totalDuration.value % 3600000) / 60000));
-    const totalSeconds = computed(() => Math.floor((totalDuration.value % 60000) / 1000));
-
-    const formattedTotal = computed(
-      () => `${pad2(totalHours.value)}:${pad2(totalMinutes.value)}:${pad2(totalSeconds.value)}`
-    );
-
-    // --- internal ---
     function clearTick() {
-      if (tickHandle.value !== null) {
-        clearInterval(tickHandle.value);
-        tickHandle.value = null;
+      if (tickHandle !== null) {
+        clearInterval(tickHandle);
+        tickHandle = null;
       }
     }
 
@@ -68,6 +54,13 @@ export const useFocusTimerStore = defineStore(
       }
       const now = Date.now();
       const elapsed = now - lastTickTime.value;
+      if (elapsed > MAX_CATCHUP_MS) {
+        clearTick();
+        isRunning.value = false;
+        isPaused.value = true;
+        lastTickTime.value = null;
+        return;
+      }
       lastTickTime.value = now;
       remainingTime.value = Math.max(0, remainingTime.value - elapsed);
       if (remainingTime.value <= 0) {
@@ -95,7 +88,6 @@ export const useFocusTimerStore = defineStore(
       hasFinished.value = false;
     }
 
-    // --- actions ---
     function toggleVisibility() {
       if (isAnimating.value) return;
       isVisible.value = !isVisible.value;
@@ -122,7 +114,7 @@ export const useFocusTimerStore = defineStore(
       hasFinished.value = false;
       lastTickTime.value = Date.now();
       clearTick();
-      tickHandle.value = setInterval(doTick, 200);
+      tickHandle = setInterval(doTick, 200);
     }
 
     function start() {
@@ -159,6 +151,12 @@ export const useFocusTimerStore = defineStore(
       if (isRunning.value && lastTickTime.value !== null) {
         const now = Date.now();
         const elapsed = now - lastTickTime.value;
+        if (elapsed > MAX_CATCHUP_MS) {
+          isRunning.value = false;
+          isPaused.value = true;
+          lastTickTime.value = null;
+          return;
+        }
         remainingTime.value = Math.max(0, remainingTime.value - elapsed);
         if (remainingTime.value <= 0) {
           isRunning.value = false;
@@ -169,7 +167,7 @@ export const useFocusTimerStore = defineStore(
         } else {
           lastTickTime.value = now;
           clearTick();
-          tickHandle.value = setInterval(doTick, 200);
+          tickHandle = setInterval(doTick, 200);
         }
       } else if (hasFinished.value) {
         isVisible.value = true;
@@ -195,9 +193,6 @@ export const useFocusTimerStore = defineStore(
       lastTickTime,
       progress,
       formattedTime,
-      totalHours,
-      totalMinutes,
-      totalSeconds,
       formattedTotal,
       toggleVisibility,
       lockToggle,

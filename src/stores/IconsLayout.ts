@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import type { DockPosition } from "./IconsDrag";
-import { defaultLayout } from "@/components/IconsConfig.vue";
+import { defaultLayout } from "@/config/dock-layout";
 
 export const useIconsLayoutStore = defineStore(
   "iconsLayout",

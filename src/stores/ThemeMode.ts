@@ -3,6 +3,8 @@ import { ref } from "vue";
 
 type ThemePoint = { x: number; y: number };
 
+const TRANSITION_MS = 360;
+
 export const useThemeModeStore = defineStore(
   "themeMode",
   () => {
@@ -43,19 +45,20 @@ export const useThemeModeStore = defineStore(
         applyTheme(!isDark.value);
       });
 
-      transition.ready.then(() => {
+      void transition.ready.then(() => {
         const radius = getRadius(x, y);
         const clipPath = [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`];
+        const goingDark = isDark.value;
 
         document.documentElement.animate(
           {
-            clipPath: isDark.value ? clipPath.reverse() : clipPath,
+            clipPath: goingDark ? clipPath.reverse() : clipPath,
           },
           {
-            duration: 360,
+            duration: TRANSITION_MS,
             easing: "cubic-bezier(0.22, 1, 0.36, 1)",
             fill: "forwards",
-            pseudoElement: isDark.value
+            pseudoElement: goingDark
               ? "::view-transition-old(root)"
               : "::view-transition-new(root)",
           }

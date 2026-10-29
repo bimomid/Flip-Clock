@@ -1,5 +1,5 @@
 <template>
-  <div class="count-clock-wrapper">
+  <div class="count-clock-wrapper" :class="{ 'has-hours': hasHours }">
     <div class="time-display">
       <template v-for="(chunk, ci) in timeChunks" :key="ci">
         <span v-if="chunk.sep" class="time-sep">{{ chunk.sep }}</span>
@@ -17,7 +17,7 @@
     </div>
 
     <div v-if="store.lapTimes.length > 0" class="lap-area">
-      <div class="lap-container">
+      <div ref="lapContainer" class="lap-container">
         <div v-for="lap in store.lapTimes" :key="lap.lapNumber" class="lap-row">
           <span class="lap-num">#{{ lap.lapNumber }}</span>
           <span class="lap-elapsed">{{ store.formatLapTime(lap.elapsed) }}</span>
@@ -26,15 +26,20 @@
           </span>
         </div>
       </div>
+      <div v-if="hiddenLapCount > 0" class="lap-more">
+        {{ $t("countClock.moreLaps", { count: hiddenLapCount }) }}
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useCountClockStore } from "@/stores/CountClock";
 
 const store = useCountClockStore();
+
+const hasHours = computed(() => store.elapsedTime >= 3600000);
 
 interface TimeChunk {
   char?: string;
@@ -54,15 +59,53 @@ const timeChunks = computed<TimeChunk[]>(() => {
   return parts;
 });
 
+const lapContainer = ref<HTMLElement | null>(null);
+const lapRowHeight = ref(0);
+const lapContainerHeight = ref(0);
+
+function measureLapRow() {
+  const el = lapContainer.value;
+  if (!el) return;
+  lapContainerHeight.value = el.clientHeight;
+  lapRowHeight.value = el.querySelector<HTMLElement>(".lap-row")?.offsetHeight ?? 0;
+}
+
+const visibleLapCount = computed(() => {
+  if (lapRowHeight.value === 0) return store.lapTimes.length;
+  return Math.max(1, Math.floor(lapContainerHeight.value / lapRowHeight.value));
+});
+
+const hiddenLapCount = computed(() => Math.max(0, store.lapTimes.length - visibleLapCount.value));
+
+let resizeObserver: ResizeObserver | null = null;
+
 onMounted(() => {
   store.recoverState();
+  measureLapRow();
+  if (lapContainer.value) {
+    resizeObserver = new ResizeObserver(() => {
+      measureLapRow();
+    });
+    resizeObserver.observe(lapContainer.value);
+  }
 });
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect();
+});
+
+watch(
+  () => store.lapTimes.length,
+  () => {
+    nextTick(measureLapRow);
+  }
+);
 </script>
 
 <style scoped>
 .count-clock-wrapper {
-  /* base unit — same derivation as FlipClock but with adjusted constants */
-  --digit-width: clamp(32px, min(calc((100vw - 48px) / 7.5), calc((100vh - 260px) / 1.65)), 96px);
+  /* 8 digits + 2 separators + 9 gaps = 10.08 digit widths. */
+  --digit-width: clamp(32px, min(calc((100vw - 48px) / 10.1), calc((100vh - 260px) / 1.65)), 96px);
   --digit-height: calc(var(--digit-width) * 1.36);
   --digit-gap: calc(var(--digit-width) * 0.12);
   --panel-radius: calc(var(--digit-width) * 0.16);
@@ -77,7 +120,11 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* ---- time display ---- */
+/* Past one hour the readout grows to H:MM:SS.cc (10 digits, 3 separators, 12 gaps). */
+.count-clock-wrapper.has-hours {
+  --digit-width: clamp(30px, min(calc((100vw - 48px) / 11.94), calc((100vh - 260px) / 1.65)), 92px);
+}
+
 .time-display {
   display: flex;
   flex-wrap: nowrap;
@@ -105,7 +152,7 @@ onMounted(() => {
 }
 
 .time-sep {
-  width: calc(var(--digit-width) * 0.2);
+  width: calc(var(--digit-width) * 0.5);
   font-family:
     "JetBrains Mono", "Cascadia Code", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
@@ -116,7 +163,6 @@ onMounted(() => {
   text-align: center;
 }
 
-/* ---- buttons ---- */
 .count-controls {
   display: flex;
   gap: calc(var(--digit-width) * 0.32);
@@ -152,10 +198,22 @@ onMounted(() => {
   transform: scale(1.1);
 }
 
-/* ---- lap area ---- */
 .lap-area {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--digit-width) * 0.12);
   width: calc(var(--digit-width) * 7.6);
   max-width: calc(100vw - 48px);
+}
+
+.lap-more {
+  font-family:
+    "JetBrains Mono", "Cascadia Code", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+  font-size: max(11px, calc(var(--digit-width) * 0.18));
+  color: var(--app-text);
+  text-align: center;
+  opacity: 0.55;
 }
 
 .lap-container {
@@ -167,9 +225,11 @@ onMounted(() => {
 }
 
 .lap-row {
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding: max(6px, calc(var(--digit-width) * 0.14)) calc(var(--digit-width) * 0.22);
+  height: max(28px, calc(var(--digit-width) * 0.5));
+  padding: 0 calc(var(--digit-width) * 0.22);
   font-family:
     "JetBrains Mono", "Cascadia Code", "Roboto Mono", SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", monospace;
@@ -209,7 +269,6 @@ onMounted(() => {
   color: #ef4444;
 }
 
-/* scrollbar */
 .lap-container::-webkit-scrollbar {
   width: 4px;
 }

@@ -29,6 +29,7 @@ export const useIconsDragStore = defineStore("iconsDrag", () => {
   const active = ref(false);
   const targetZone = ref<DockPosition | null>(null);
   const targetInsert = ref(-1);
+  const fluidDockEl = ref<HTMLElement | null>(null);
 
   function registerDock(id: string, ref: DockRef) {
     dockRefs.set(id, ref);
@@ -36,6 +37,10 @@ export const useIconsDragStore = defineStore("iconsDrag", () => {
 
   function unregisterDock(id: string) {
     dockRefs.delete(id);
+  }
+
+  function setFluidDock(el: HTMLElement | null) {
+    fluidDockEl.value = el;
   }
 
   function endDrag() {
@@ -76,8 +81,10 @@ export const useIconsDragStore = defineStore("iconsDrag", () => {
     active,
     targetZone,
     targetInsert,
+    fluidDockEl,
     registerDock,
     unregisterDock,
+    setFluidDock,
     endDrag,
     globalHitTest,
   };

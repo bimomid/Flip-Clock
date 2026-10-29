@@ -1,7 +1,11 @@
 <template>
   <Transition name="lang">
-    <div v-if="showLanguagePicker" class="lang-backdrop" @click.self="showLanguagePicker = false">
-      <div class="lang-panel">
+    <div
+      v-if="ui.showLanguagePicker"
+      class="lang-backdrop"
+      @click.self="ui.showLanguagePicker = false"
+    >
+      <div class="lang-panel" role="dialog" aria-modal="true" :aria-label="$t('icons.language')">
         <button
           v-for="locale in availableLocales"
           :key="locale.code"
@@ -18,14 +22,24 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import i18n, { availableLocales } from "@/languages";
-import { showLanguagePicker } from "@/components/IconsConfig.vue";
+import i18n, { availableLocales, setLocale } from "@/languages";
+import { useIconsUIStore } from "@/stores/IconsUI";
+import { useEscapeKey } from "@/composables/useEscapeKey";
+
+const ui = useIconsUIStore();
+
+useEscapeKey(
+  computed(() => ui.showLanguagePicker),
+  () => {
+    ui.showLanguagePicker = false;
+  }
+);
 
 const currentLocale = computed(() => i18n.global.locale.value);
 
 function switchTo(code: string) {
-  (i18n.global.locale.value as string) = code;
-  showLanguagePicker.value = false;
+  setLocale(code);
+  ui.showLanguagePicker = false;
 }
 </script>
 

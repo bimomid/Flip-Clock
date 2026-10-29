@@ -52,9 +52,9 @@ const playPauseIcon = computed(() =>
   store.isRunning && !store.hasFinished ? pauseSvg : continueSvg
 );
 
-const pickerHours = computed(() => store.totalHours);
-const pickerMinutes = computed(() => store.totalMinutes);
-const pickerSeconds = computed(() => store.totalSeconds);
+const pickerHours = computed(() => Math.floor(store.totalDuration / 3600000));
+const pickerMinutes = computed(() => Math.floor((store.totalDuration % 3600000) / 60000));
+const pickerSeconds = computed(() => Math.floor((store.totalDuration % 60000) / 1000));
 
 function onPlayPause(e: MouseEvent) {
   if (store.hasFinished) {
@@ -189,7 +189,6 @@ onBeforeUnmount(() => {
   transform: none;
 }
 
-/* picker transition */
 .picker-enter-active,
 .picker-leave-active {
   transition:

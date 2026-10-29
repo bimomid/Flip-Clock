@@ -3,30 +3,16 @@
 </template>
 
 <script setup lang="ts">
-import {
-  useTemplateRef,
-  toValue,
-  watch,
-  onMounted,
-  onBeforeUnmount,
-  type MaybeRefOrGetter,
-  type WatchSource,
-  type MaybeRef,
-} from "vue";
+import { useTemplateRef, toValue, watch, onMounted, onBeforeUnmount } from "vue";
+import type { IconConfig } from "@/config/icons";
 
-export interface IconConfig {
-  svg: MaybeRefOrGetter<string>;
-  svgWatch?: WatchSource;
-  color: MaybeRef<string>;
-  onClick?: (e: MouseEvent) => void;
-}
-
-const props = defineProps<{ config: IconConfig }>();
+const props = defineProps<{ config: IconConfig | undefined }>();
 
 const el = useTemplateRef("el");
 
 function update() {
-  if (el.value) el.value.innerHTML = toValue(props.config.svg);
+  if (!el.value || !props.config) return;
+  el.value.innerHTML = toValue(props.config.svg);
 }
 
 let stopWatch: (() => void) | undefined;

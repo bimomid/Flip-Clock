@@ -1,6 +1,7 @@
 import { createI18n } from "vue-i18n";
 import zhCN from "./packages/zh-CN.json";
 import enUS from "./packages/en-US.json";
+import { detectLocale, matchLocale, writeStoredLocale } from "./locale";
 
 export interface LocaleEntry {
   code: string;
@@ -12,16 +13,32 @@ const messages = {
   "en-US": enUS,
 };
 
-export const availableLocales: LocaleEntry[] = Object.entries(messages).map(([code, msgs]) => ({
+const availableCodes = Object.keys(messages) as (keyof typeof messages)[];
+
+export const availableLocales: LocaleEntry[] = availableCodes.map((code) => ({
   code,
-  name: (msgs as { locale: { name: string } }).locale.name,
+  name: messages[code].locale.name,
 }));
 
 const i18n = createI18n({
   legacy: false,
-  locale: "zh-CN",
+  locale: detectLocale(availableCodes),
   fallbackLocale: "zh-CN",
   messages,
 });
+
+function applyDocumentLanguage(code: string) {
+  if (typeof document !== "undefined") document.documentElement.lang = code;
+}
+
+export function setLocale(code: string): void {
+  const next = matchLocale(code, availableCodes);
+  if (!next) return;
+  i18n.global.locale.value = next;
+  writeStoredLocale(next);
+  applyDocumentLanguage(next);
+}
+
+applyDocumentLanguage(i18n.global.locale.value);
 
 export default i18n;
