@@ -51,7 +51,7 @@ body:
     attributes:
       label: 应用版本
       description: 见 Releases 页面或安装包文件名
-      placeholder: 0.2.0
+      placeholder: 1.0.0
     validations:
       required: true
 

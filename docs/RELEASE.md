@@ -13,7 +13,7 @@
 | ------------- | ----------------------------------------------------------------------------- | -------------------------------------- |
 | 日常发版      | push 到 master，且包含 feat / fix / breaking 提交                             | 自动升版本、打 tag、构建并发布         |
 | 只有文档/杂项 | push 到 master，只有 chore / ci / refactor 等（纯 docs、markdown 推送不触发） | 只跑校验；脚本输出 `skip=true`，不发版 |
-| 热修 / 补发   | Actions → Release → Run workflow，填**已存在**的 tag（如 `v0.2.0`）           | 不升版本，直接构建该 tag 并发布        |
+| 热修 / 补发   | Actions → Release → Run workflow，填**已存在**的 tag（如 `v1.0.0`）           | 不升版本，直接构建该 tag 并发布        |
 | 推 tag        | push `v*` tag                                                                 | 同上（不升版本）                       |
 
 release 自己产生的提交是 `chore(release): X.Y.Z [skip release]`，workflow 会忽略它；

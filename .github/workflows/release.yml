@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to release, e.g. v0.2.0 (no version bump)"
+        description: "Existing tag to release, e.g. v1.0.0 (no version bump)"
         required: true
         type: string
 
@@ -61,6 +61,7 @@ jobs:
       tag: ${{ steps.bump.outputs.tag || steps.manual.outputs.tag }}
       skip: ${{ steps.bump.outputs.skip || steps.manual.outputs.skip }}
       signing: ${{ steps.signing.outputs.enabled }}
+      display: ${{ steps.display.outputs.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -133,6 +134,24 @@ jobs:
           git tag -a "${TAG}" -m "${TAG}"
           git push origin "HEAD:master"
           git push origin "refs/tags/${TAG}"
+      - name: Release display name
+        id: display
+        shell: bash
+        env:
+          TAG: ${{ steps.bump.outputs.tag || steps.manual.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TAG:-}" ]; then
+            echo "name=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          v="${TAG#v}"
+          # v1.0.0 -> v1.0：GitHub Release 页面用短展示名，git tag 仍是完整 semver
+          if [[ "$v" =~ ^([0-9]+)\.([0-9]+)\.0$ ]]; then
+            echo "name=v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$TAG" >> "$GITHUB_OUTPUT"
+          fi
 
   build-windows:
     name: Windows (NSIS + MSI + portable)
@@ -407,7 +426,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.plan.outputs.tag }}
-          name: ${{ needs.plan.outputs.tag }}
+          name: ${{ needs.plan.outputs.display || needs.plan.outputs.tag }}
           generate_release_notes: true
           prerelease: ${{ contains(needs.plan.outputs.version, '-') }}
           files: release-assets/*
