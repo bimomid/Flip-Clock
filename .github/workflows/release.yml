@@ -283,24 +283,35 @@ jobs:
           out=release-assets
           mkdir -p "$out"
           shopt -s nullglob
-          files=(
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
-            src-tauri/target/release/bundle/appimage/*.sig
-          )
-          for file in "${files[@]}"; do
-            cp "$file" "$out/"
+          # Tauri v2 signs the AppImage in place (*.AppImage + *.AppImage.sig);
+          # createUpdaterArtifacts "v1Compatible" would produce *.AppImage.tar.gz instead.
+          deb=(src-tauri/target/release/bundle/deb/*.deb)
+          img=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          tarball=(src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz)
+          sig=(src-tauri/target/release/bundle/appimage/*.sig)
+          echo "deb    : ${deb[*]:-<none>}"
+          echo "image  : ${img[*]:-<none>}"
+          echo "tarball: ${tarball[*]:-<none>}"
+          echo "sig    : ${sig[*]:-<none>}"
+          for file in "${deb[@]}" "${img[@]}" "${tarball[@]}" "${sig[@]}"; do
+            if [ -n "$file" ]; then cp "$file" "$out/"; fi
           done
-          compgen -G "$out/*.deb" > /dev/null || { echo "::error::missing .deb"; exit 1; }
-          compgen -G "$out/*.AppImage" > /dev/null || { echo "::error::missing .AppImage"; exit 1; }
-          if [ "$SIGNING" = "true" ]; then
-            compgen -G "$out/*.AppImage.tar.gz.sig" > /dev/null || {
-              echo "::error::missing AppImage updater signature"
-              exit 1
-            }
-          fi
           ls -la "$out"
+          bundle_dir=src-tauri/target/release/bundle/appimage
+          if ! compgen -G "$out/*.deb" > /dev/null; then
+            echo "::error::missing .deb; deb dir: $(ls src-tauri/target/release/bundle/deb 2>/dev/null || echo none)"
+            exit 1
+          fi
+          if ! compgen -G "$out/*.AppImage" > /dev/null; then
+            echo "::error::missing .AppImage; appimage dir: $(ls "$bundle_dir" 2>/dev/null || echo none)"
+            exit 1
+          fi
+          if [ "$SIGNING" = "true" ] \
+            && ! compgen -G "$out/*.AppImage.sig" > /dev/null \
+            && ! compgen -G "$out/*.AppImage.tar.gz.sig" > /dev/null; then
+            echo "::error::missing AppImage signature; appimage dir: $(ls "$bundle_dir" 2>/dev/null || echo none)"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: release-linux

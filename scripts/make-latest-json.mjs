@@ -23,7 +23,8 @@ if (pkg.version !== expectedVersion) {
 
 const targets = [
   { key: "windows-x86_64", suffixes: ["-setup.exe"] },
-  { key: "linux-x86_64", suffixes: [".AppImage.tar.gz"] },
+  // Tauri v2 signs the AppImage in place; "v1Compatible" produces *.AppImage.tar.gz instead.
+  { key: "linux-x86_64", suffixes: [".AppImage", ".AppImage.tar.gz"] },
 ];
 
 function pickPlatform({ key, suffixes }) {

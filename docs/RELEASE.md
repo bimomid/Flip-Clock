@@ -45,15 +45,15 @@ workflow 里用 `needs` 串起来）。
 | Windows | `FlipClock-<ver>-windows-x64-portable.exe` | 便携版裸 exe                       |
 | Windows | `FlipClock-<ver>-windows-x64-portable.zip` | 便携版 zip                         |
 | Linux   | `flip-clock_<ver>_amd64.deb`               | deb 安装包                         |
-| Linux   | `flip-clock_<ver>_amd64.AppImage`          | AppImage                           |
-| Linux   | `flip-clock_<ver>_amd64.AppImage.tar.gz`   | updater 归档（配 `.sig`）          |
+| Linux   | `flip-clock_<ver>_amd64.AppImage`          | AppImage（updater 直接复用它）     |
+| Linux   | `flip-clock_<ver>_amd64.AppImage.sig`      | AppImage 签名（自动更新用）        |
 | Android | `FlipClock-<ver>-android-*.apk`            | 可选 job，失败不阻塞桌面发布       |
 | 通用    | `*.sig` / `latest.json`                    | 自动更新签名与清单（需要签名密钥） |
 
 `latest.json` 的 target 选择：
 
 - `windows-x86_64` → `*-setup.exe` + 同名 `.sig`
-- `linux-x86_64` → `*.AppImage.tar.gz` + 同名 `.sig`
+- `linux-x86_64` → `*.AppImage` + 同名 `.sig`（若配置为 `createUpdaterArtifacts: "v1Compatible"` 则回退到 `*.AppImage.tar.gz` + `.sig`）
 
 提交信息里的 emoji 不影响解析：`feat: :sparkles: xxx`、`feat: ✨ xxx` 都会被识别为 `feat`。
 
