@@ -23,7 +23,8 @@ if (pkg.version !== expectedVersion) {
 
 const targets = [
   { key: "windows-x86_64", suffixes: ["-setup.exe"] },
-  { key: "linux-x86_64", suffixes: [".AppImage.tar.gz"] },
+  // Tauri v2 signs the AppImage in place; "v1Compatible" produces *.AppImage.tar.gz instead.
+  { key: "linux-x86_64", suffixes: [".AppImage", ".AppImage.tar.gz"] },
 ];
 
 function pickPlatform({ key, suffixes }) {
@@ -66,9 +67,19 @@ if (Object.keys(platforms).length === 0) {
   process.exit(1);
 }
 
+// 发布流程会先把更新日志写到 release-notes.md；桌面与 Android 的更新弹窗
+// 都直接显示 notes，所以这里优先用真实日志，没有就退回描述。
+async function loadNotes() {
+  try {
+    const notes = (await readFile("release-notes.md", "utf8")).trim();
+    if (notes !== "") return notes;
+  } catch {}
+  return pkg.description ?? "";
+}
+
 const manifest = {
   version: pkg.version,
-  notes: pkg.description ?? "",
+  notes: await loadNotes(),
   pub_date: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
   platforms,
 };

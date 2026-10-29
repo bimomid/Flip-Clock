@@ -18,6 +18,9 @@
 
         <div v-else-if="store.status === 'available'" class="update-body">
           <p class="update-line">{{ $t("updater.available") }}</p>
+          <p v-if="store.mode === 'manual'" class="update-line update-hint">
+            {{ $t("updater.manualHint") }}
+          </p>
           <pre v-if="store.notes" class="update-notes">{{ store.notes }}</pre>
         </div>
 
@@ -41,13 +44,20 @@
         </div>
 
         <div v-else class="update-body update-error">
-          {{ $t("updater.failed") }}
+          {{ store.timedOut ? $t("updater.timeout") : $t("updater.failed") }}
           <pre v-if="store.error" class="update-notes">{{ store.error }}</pre>
         </div>
 
         <div class="update-actions">
           <button
-            v-if="store.status === 'available'"
+            v-if="showDownload"
+            class="update-btn update-btn-primary"
+            @click="store.openDownloadPage()"
+          >
+            {{ $t("updater.openDownload") }}
+          </button>
+          <button
+            v-else-if="store.status === 'available'"
             class="update-btn update-btn-primary"
             @click="store.downloadAndInstall()"
           >
@@ -60,7 +70,7 @@
           >
             {{ $t("updater.restart") }}
           </button>
-          <button v-else-if="store.status === 'error'" class="update-btn" @click="retry">
+          <button v-if="store.status === 'error'" class="update-btn" @click="retry">
             {{ $t("updater.retry") }}
           </button>
           <button v-if="store.status !== 'downloading'" class="update-btn" @click="store.dismiss()">
@@ -79,6 +89,11 @@ import { useUpdaterStore } from "@/stores/Updater";
 
 const { t } = useI18n();
 const store = useUpdaterStore();
+
+/** 移动端检查失败/超时也保留“前往下载”，否则用户没有任何出路。 */
+const showDownload = computed(
+  () => store.mode === "manual" && (store.status === "available" || store.status === "error")
+);
 
 const titleText = computed(() => {
   const announcing = store.status === "available" || store.status === "ready";
@@ -162,6 +177,13 @@ function onBackdrop() {
 
 .update-line {
   margin: 0;
+}
+
+.update-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  opacity: 0.7;
 }
 
 .update-notes {

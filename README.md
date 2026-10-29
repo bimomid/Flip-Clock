@@ -1,192 +1,155 @@
 <p align="center">
-  <h1 align="center">Flip Clock</h1>
+  <h1 align="center">FlipClock</h1>
   <p align="center">A versatile desktop time tool built with Vue 3 + Tauri</p>
   <p align="center">基于 Vue 3 + Tauri 的多功能桌面时钟工具</p>
   <p align="center">
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue" alt="License" /></a>
     <a href="https://github.com/bimomid/Flip-Clock/releases/latest"><img src="https://img.shields.io/github/v/release/bimomid/Flip-Clock" alt="Latest release" /></a>
+    <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-4b5563" alt="Platform" />
+    <img src="https://img.shields.io/badge/Tauri-2-24C8DB" alt="Tauri 2" />
+    <img src="https://img.shields.io/badge/Vue-3-42B883" alt="Vue 3" />
   </p>
+</p>
+
+<p align="center">
+  <img src="img/1.png" width="86%" alt="FlipClock" />
+  <br />
+  <sub>Windows | Linux | Android</sub>
 </p>
 
 ---
 
-## 📥 Download | 下载
+## 📥 下载 | Download
 
-Windows 与 Linux 安装包见 [Releases](https://github.com/bimomid/Flip-Clock/releases/latest)：
+| 平台 / Platform | 产物 / Artifacts                                | 自动更新 / Auto-update |
+| --------------- | ----------------------------------------------- | :--------------------: |
+| **Windows**     | `FlipClock_<ver>_x64-setup.exe` (NSIS) / `.msi` |           ✅           |
+| **Linux**       | `FlipClock_<ver>_amd64.AppImage` / `.deb`       |           ✅           |
+| **Android**     | `FlipClock-<ver>-android-universal.apk`         |     ✅（提示下载）     |
 
-| 平台    | 产物                                                  |
-| ------- | ----------------------------------------------------- |
-| Windows | NSIS 安装包 `*-setup.exe`（支持自动更新）、MSI 安装包 |
-| Linux   | AppImage（支持自动更新）、`.deb`                      |
-| Android | APK（CI 构建，见下文「Android 构建」）                |
-
-> 非商业使用许可，详见 [LICENSE](LICENSE)。
-
----
-
-## ✨ Features | 功能
-
-- **Flip Clock** — Classic flip-style clock with smooth flip animation and optional tick sound
-- **Focus Timer** — Pomodoro-style countdown with ring progress visualization and alarm
-- **Stopwatch** — Precise stopwatch with lap/split timing
-- **Task Notepad** — Draggable & resizable floating notepad
-- **Customizable Dock** — Drag-and-drop icon toolbar supporting 6 dock positions
-- **Theme** — Dark / Light theme switching
-- **12/24h** — Time format toggle
-- **i18n** — Multi-language support (English / 中文)
+<p align="center">
+  <a href="https://github.com/bimomid/Flip-Clock/releases/latest"><b>👉 前往 Releases 下载 | Download the latest build</b></a>
+</p>
 
 ---
 
-- **翻页时钟** — 经典翻页动画时钟，带翻页音效
-- **专注计时** — 番茄钟倒计时，环形进度与闹铃提醒
-- **秒表** — 高精度秒表，支持计圈/分段计时
-- **任务便签** — 可拖拽、可缩放的悬浮记事本
-- **图标坞** — 可拖拽排序的图标工具栏，支持 6 种停靠位置
-- **主题切换** — 深色 / 浅色主题
-- **12/24 小时制** — 时间格式切换
-- **国际化** — 多语言支持（English / 中文）
+## ✨ 功能 | Features
 
-## 📸 Screenshots | 截图
+|     | 中文                                            | English                                                               |
+| --- | ----------------------------------------------- | --------------------------------------------------------------------- |
+| 🕰️  | **翻页时钟** — 经典翻页动画，可选翻页音效       | **FlipClock** — classic flip animation with optional tick sound       |
+| ⏳  | **专注计时** — 番茄钟倒计时，环形进度与闹铃     | **Focus Timer** — Pomodoro countdown with ring progress and alarm     |
+| ⏱️  | **秒表** — 高精度计时，支持计圈 / 分段          | **Stopwatch** — high-precision timing with laps and splits            |
+| 📝  | **任务便签** — 可拖拽、可缩放的悬浮记事本       | **Notepad** — draggable, resizable floating notepad                   |
+| 🧩  | **图标坞** — 拖拽排序，6 种停靠位置，可自动隐藏 | **Dock** — drag-to-reorder toolbar, 6 anchors, auto-hide              |
+| 🎨  | **主题** — 深色 / 浅色 + 调色板，圆形扩散过渡   | **Theme** — dark / light with palettes and circular reveal transition |
+| 🕛  | **时间格式** — 12 / 24 小时制一键切换           | **Time format** — 12h / 24h toggle                                    |
+| 🌐  | **多语言** — English / 中文，首次启动跟随系统   | **i18n** — English / 中文, follows system locale on first launch      |
+
+---
+
+## 📸 截图 | Screenshots
 
 <div align="center">
-  <img src="img/1.png" width="45%" alt="Flip clock (dark)" />
-  <img src="img/2.png" width="45%" alt="Flip clock (light)" />
+  <img src="img/2.png" width="45%" alt="Flip clock, light theme" />
   <img src="img/3.png" width="45%" alt="Focus timer running" />
   <img src="img/4.png" width="45%" alt="Stopwatch with laps" />
-  <img src="img/5.png" width="45%" alt="Theme switch animation, dark to light, mid-frame" />
+  <img src="img/5.png" width="45%" alt="Theme switch, dark to light, mid-frame" />
   <img src="img/6.png" width="45%" alt="Task notepad" />
   <img src="img/7.png" width="45%" alt="Palette panel" />
   <img src="img/8.png" width="45%" alt="Language picker" />
-  <img src="img/9.png" width="45%" alt="Theme switch animation, light to dark, mid-frame" />
-  <img src="img/10.png" width="45%" alt="Flip clock in 12 hour format" />
-  <img src="img/11.png" width="45%" alt="Focus timer duration picker" />
+  <img src="img/9.png" width="45%" alt="Theme switch, light to dark, mid-frame" />
 </div>
 
-<div align="center">
-  <img src="img/12.png" width="22%" alt="Android build running on a phone" />
-</div>
+<p align="center">
+  <img src="img/10.png" width="45%" alt="Focus timer duration picker" />
+</p>
 
-> 截图均来自打包后的正式版本（Windows，`pnpm tauri build` 产物）。亮暗主题切换使用 View Transitions API 做圆形扩散动画，
-> `img/5.png` 与 `img/9.png` 是动画进行到约 1/4 时的画面，用于展示过渡瞬间的图层效果。
+<p align="center">
+  <img src="img/11.png" width="34%" alt="Android build running on a phone" />
+</p>
 
-## 🛠 Tech Stack | 技术栈
+---
 
-| Category  | Stack                           |
-| --------- | ------------------------------- |
-| Framework | Vue 3 (Composition API)         |
-| Desktop   | Tauri 2                         |
-| Language  | TypeScript                      |
-| State     | Pinia + persisted state         |
-| i18n      | vue-i18n                        |
-| Toolchain | Vite+ (Vite 8 + Oxlint + Oxfmt) |
-| Styles    | SCSS + CSS custom properties    |
-| CSS Lint  | Stylelint                       |
+## 🛠 技术栈 | Tech Stack
 
-## 🚀 Getting Started | 开始
+| 类别 / Category       | 选型 / Stack                                       |
+| --------------------- | -------------------------------------------------- |
+| 🧩 框架 / Framework   | Vue 3 (Composition API) + TypeScript               |
+| 🦀 桌面 / Desktop     | Tauri 2 (Rust)                                     |
+| 🗃️ 状态 / State       | Pinia + persisted state                            |
+| 🌐 国际化 / i18n      | vue-i18n                                           |
+| 🎨 样式 / Styles      | SCSS + CSS custom properties                       |
+| ⚙️ 工具链 / Toolchain | Vite+ (Vite 8 + Oxlint + Oxfmt), Vitest, Stylelint |
 
-### Requirements | 环境要求
+---
 
-| 依赖     | 版本             | 说明                                                               |
-| -------- | ---------------- | ------------------------------------------------------------------ |
-| Node.js  | ≥ 24             | CI 使用 Node 24                                                    |
-| pnpm     | ≥ 10             | 仓库只接受 pnpm（`preinstall` 有 `only-allow` 校验）               |
-| Rust     | stable（≥ 1.90） | `tauri-plugin-updater` 要求；通过 [rustup](https://rustup.rs) 安装 |
-| 平台依赖 | —                | 见下表                                                             |
+## 🚀 开始 | Getting Started
 
-平台依赖：
+### 📦 环境要求 | Requirements
 
-- **Windows**：Microsoft C++ Build Tools（勾选「使用 C++ 的桌面开发」）+ WebView2 Runtime（Win11 自带）
-- **Linux**：`libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
-- **Android**（可选）：JDK 21 + Android SDK / NDK，首次需执行 `pnpm tauri android init`
+| 依赖 / Dependency        | 版本 / Version   | 说明 / Notes                                      |
+| ------------------------ | ---------------- | ------------------------------------------------- |
+| Node.js                  | ≥ 24             | CI 使用 24 / CI runs on 24                        |
+| pnpm                     | ≥ 10             | 仅接受 pnpm / pnpm only（`only-allow` 校验）      |
+| Rust                     | stable（≥ 1.90） | updater 需要 / required by `tauri-plugin-updater` |
+| 平台依赖 / Platform deps | —                | 见下 / see below                                  |
+
+- **Windows** — Microsoft C++ Build Tools（“使用 C++ 的桌面开发”）+ WebView2 Runtime
+- **Linux** — `libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+- **Android**（可选 / optional）— JDK 21 + Android SDK / NDK，首次执行 `pnpm tauri android init`
+
+### ⌨️ 常用命令 | Commands
 
 ```bash
-pnpm install        # 安装依赖
-pnpm dev            # 浏览器开发（http://localhost:1420）
-pnpm tauri dev      # 桌面端开发（热更新）
-pnpm build          # 构建前端
-pnpm tauri build    # 构建桌面安装包
+pnpm install        # 安装依赖 | install dependencies
+pnpm dev            # 浏览器开发 | browser dev (http://localhost:1420)
+pnpm tauri dev      # 桌面端开发 | desktop dev with HMR
+pnpm build          # 构建前端 | build frontend
+pnpm tauri build    # 构建桌面安装包 | build installers
 
-pnpm check          # 格式 + Oxlint + 类型检查（不修改文件）
-pnpm check:fix      # 同上，自动修复
-pnpm test           # 单元测试（单次运行）
-pnpm test:watch     # 单元测试（watch）
-pnpm version:check  # 校验三处版本号一致
-
-pnpm commit         # 交互式提交（commitizen + cz-git）
+pnpm check          # 格式 + lint + 类型 | format, lint, types
+pnpm check:fix      # 自动修复 | fix in place
+pnpm test           # 单元测试 | unit tests
+pnpm test:watch     # 监听模式 | watch mode
+pnpm version:check  # 校验三处版本号 | verify version sync
+pnpm commit         # 交互式提交 | guided commit
 ```
 
-国际化：首次启动跟随系统语言（`navigator.languages`），在图标坞切换后会被记住。
+> 发版与 CI 细节见 [docs/RELEASE.md](docs/RELEASE.md)。
 
-## 📁 Project Structure | 目录结构
+---
+
+## 📁 目录结构 | Project Structure
 
 ```
 src/
-├── components/    # Vue components
-├── composables/   # Reusable composition functions
-├── config/        # Static config tables
-├── layouts/       # Page layouts
-├── languages/     # i18n definitions
-├── services/      # Platform bridges
+├── components/    # Vue 组件 | components
+├── composables/   # 组合式函数 | composition functions
+├── config/        # 静态配置表 | static config tables
+├── layouts/       # 页面布局 | page layouts
+├── languages/     # 词条定义 | i18n definitions
+├── services/      # 平台桥接 | platform bridges
 ├── stores/        # Pinia stores
-├── styles/        # Global styles and theme tokens
-├── utils/         # Pure helper functions
-├── assets/        # Static assets (svg, mp3)
-└── main.ts        # Entry
-tests/             # All test files
-src-tauri/         # Tauri (Rust) backend
+├── styles/        # 全局样式与主题变量 | global styles and theme tokens
+├── utils/         # 纯函数 | pure helpers
+├── assets/        # 静态资源 | static assets (svg, mp3)
+└── main.ts        # 入口 | entry
+tests/             # 全部测试 | all tests
+src-tauri/         # Tauri（Rust）后端 | backend
 ```
 
-## 🧪 测试
+---
 
-```bash
-pnpm test     # Vitest 单次运行
-```
+## 📄 许可 | License
 
-- 测试文件放在 `tests/`，命名 `*.test.ts`
-- 纯函数（`src/utils`、`src/languages/locale.ts`）优先覆盖边界情况
-- 涉及计时的 store 用 `vi.useFakeTimers()`，不要依赖真实时间
+本项目采用 [PolyForm Noncommercial 1.0.0](LICENSE)：允许个人学习、研究、修改与非商业分发，**禁止商业使用**。
 
-## 📝 提交规范
+Licensed under the [PolyForm Noncommercial 1.0.0](LICENSE): personal, educational, research and noncommercial
+use is allowed, **commercial use is not**. This is a source-available license, not an OSI-approved open source license.
 
-采用 [Conventional Commits](https://www.conventionalcommits.org/)，由 commitlint 在 `commit-msg` 钩子校验，允许的 type：
-`feat` `fix` `docs` `style` `refactor` `perf` `test` `build` `ci` `revert` `chore` `wip`。
+---
 
-```bash
-pnpm commit   # 交互式生成符合规范的提交信息
-```
-
-提交前请至少跑通 `pnpm check` 与 `pnpm test`。
-
-## 🌐 国际化
-
-- 词条位于 `src/languages/packages/<locale>.json`，各语言文件结构必须保持一致
-- 新增语言：复制 `en-US.json` → 改 `locale.name` → 在 `src/languages/index.ts` 的 `messages` 里注册
-- 组件里不要写死文案，统一用 `$t("...")`
-
-## 🤖 Android 构建
-
-APK 由 CI 自动构建并附在 Release 中；本地构建需要签名环境：
-
-1. 首次执行 `pnpm tauri android init`
-2. 在 `src-tauri/gen/android/keystore.properties` 填写签名信息（该文件已被 gitignore，**不要提交**）
-3. 执行 `pnpm android:build`，产物位于 `src-tauri/gen/android/app/build/outputs/apk/`
-
-## ⚙️ CI 与发布
-
-- **CI**（PR / push）：格式 + lint + 类型 + 单测 + 前端构建、`cargo fmt` + `clippy -D warnings`、Windows/Linux 编译冒烟
-- **Release**（push `master`，全自动）：校验 → 按 Conventional Commits 自动升版本号（三处同步）→ 打 tag → 矩阵构建 Windows（NSIS/MSI/便携 zip）、Linux（deb/AppImage）、Android（APK）→ 生成 `latest.json` → 发布 GitHub Release
-
-发版细节、需要的 secrets 与手动热修流程见 [docs/RELEASE.md](docs/RELEASE.md)。
-
-## 🔒 安全说明
-
-- 渲染进程使用 Tauri CSP：`default-src 'self'`，脚本只允许同源，样式仅允许同源 + 内联。
-- `script-src` 需额外允许 `'unsafe-eval'`：`vue-i18n` 在运行时编译词条模板（`new Function`），而 CSP 默认禁止。
-  这是目前唯一启用 eval 的路径；若后续改为构建期预编译词条（`@intlify/unplugin-vue-i18n`），可移除该豁免。
-- 应用不发起远程请求（除更新检查），不加载外部脚本，任务便签等输入均按纯文本渲染。
-
-## 📄 License | 许可
-
-本项目采用 [PolyForm Noncommercial 1.0.0](LICENSE)：允许个人学习、研究、修改与非商业分发，**禁止商业使用**，版权归作者所有。商业授权请联系作者。
-
-> 说明：该许可证属于 source-available，并非 OSI 认可的开源许可证。
+<p align="center">
+  <sub>Made with ❤️ by <a href="https://github.com/bimomid">bimomid</a> | Vue 3 + Tauri</sub>
+</p>

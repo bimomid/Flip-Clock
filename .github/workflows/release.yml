@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to release, e.g. v0.2.0 (no version bump)"
+        description: "Existing tag to release, e.g. v1.0.0 (no version bump)"
         required: true
         type: string
 
@@ -61,6 +61,7 @@ jobs:
       tag: ${{ steps.bump.outputs.tag || steps.manual.outputs.tag }}
       skip: ${{ steps.bump.outputs.skip || steps.manual.outputs.skip }}
       signing: ${{ steps.signing.outputs.enabled }}
+      display: ${{ steps.display.outputs.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -133,6 +134,24 @@ jobs:
           git tag -a "${TAG}" -m "${TAG}"
           git push origin "HEAD:master"
           git push origin "refs/tags/${TAG}"
+      - name: Release display name
+        id: display
+        shell: bash
+        env:
+          TAG: ${{ steps.bump.outputs.tag || steps.manual.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TAG:-}" ]; then
+            echo "name=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          v="${TAG#v}"
+          # v1.0.0 -> v1.0：GitHub Release 页面用短展示名，git tag 仍是完整 semver
+          if [[ "$v" =~ ^([0-9]+)\.([0-9]+)\.0$ ]]; then
+            echo "name=v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=$TAG" >> "$GITHUB_OUTPUT"
+          fi
 
   build-windows:
     name: Windows (NSIS + MSI + portable)
@@ -202,7 +221,9 @@ jobs:
               throw "MSI signature (*.msi.sig) was not produced"
             }
           }
-          $portable = "src-tauri/target/release/flip-clock.exe"
+          $config = Get-Content "src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json
+          $binaryName = if ($config.mainBinaryName) { $config.mainBinaryName } else { $config.productName }
+          $portable = "src-tauri/target/release/$binaryName.exe"
           if (-not (Test-Path -Path $portable)) { throw "portable binary not found: $portable" }
           $portableName = "FlipClock-$($env:VERSION)-windows-x64-portable.exe"
           Copy-Item -Path $portable -Destination (Join-Path $out $portableName) -Force
@@ -264,24 +285,35 @@ jobs:
           out=release-assets
           mkdir -p "$out"
           shopt -s nullglob
-          files=(
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
-            src-tauri/target/release/bundle/appimage/*.sig
-          )
-          for file in "${files[@]}"; do
-            cp "$file" "$out/"
+          # Tauri v2 signs the AppImage in place (*.AppImage + *.AppImage.sig);
+          # createUpdaterArtifacts "v1Compatible" would produce *.AppImage.tar.gz instead.
+          deb=(src-tauri/target/release/bundle/deb/*.deb)
+          img=(src-tauri/target/release/bundle/appimage/*.AppImage)
+          tarball=(src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz)
+          sig=(src-tauri/target/release/bundle/appimage/*.sig)
+          echo "deb    : ${deb[*]:-<none>}"
+          echo "image  : ${img[*]:-<none>}"
+          echo "tarball: ${tarball[*]:-<none>}"
+          echo "sig    : ${sig[*]:-<none>}"
+          for file in "${deb[@]}" "${img[@]}" "${tarball[@]}" "${sig[@]}"; do
+            if [ -n "$file" ]; then cp "$file" "$out/"; fi
           done
-          compgen -G "$out/*.deb" > /dev/null || { echo "::error::missing .deb"; exit 1; }
-          compgen -G "$out/*.AppImage" > /dev/null || { echo "::error::missing .AppImage"; exit 1; }
-          if [ "$SIGNING" = "true" ]; then
-            compgen -G "$out/*.AppImage.tar.gz.sig" > /dev/null || {
-              echo "::error::missing AppImage updater signature"
-              exit 1
-            }
-          fi
           ls -la "$out"
+          bundle_dir=src-tauri/target/release/bundle/appimage
+          if ! compgen -G "$out/*.deb" > /dev/null; then
+            echo "::error::missing .deb; deb dir: $(ls src-tauri/target/release/bundle/deb 2>/dev/null || echo none)"
+            exit 1
+          fi
+          if ! compgen -G "$out/*.AppImage" > /dev/null; then
+            echo "::error::missing .AppImage; appimage dir: $(ls "$bundle_dir" 2>/dev/null || echo none)"
+            exit 1
+          fi
+          if [ "$SIGNING" = "true" ] \
+            && ! compgen -G "$out/*.AppImage.sig" > /dev/null \
+            && ! compgen -G "$out/*.AppImage.tar.gz.sig" > /dev/null; then
+            echo "::error::missing AppImage signature; appimage dir: $(ls "$bundle_dir" 2>/dev/null || echo none)"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: release-linux
@@ -326,10 +358,42 @@ jobs:
           sdkmanager "ndk;27.2.12479018" "platforms;android-36" "build-tools;35.0.0"
           echo "NDK_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT}}/ndk/27.2.12479018" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
-      - name: Build debug APK
+      - name: Prepare Android release signing
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANDROID_KEYSTORE_BASE64 is not configured; falling back to a debug-signed APK."
+            exit 0
+          fi
+          keystore=src-tauri/gen/android/release.keystore
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
+          chmod 600 "$keystore"
+          {
+            echo "storeFile=../release.keystore"
+            echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}"
+            echo "keyAlias=${ANDROID_KEY_ALIAS}"
+            echo "keyPassword=${ANDROID_KEY_PASSWORD}"
+          } > src-tauri/gen/android/keystore.properties
+          chmod 600 src-tauri/gen/android/keystore.properties
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+      - name: Build signed release APK
+        if: ${{ steps.signing.outputs.enabled == 'true' }}
+        run: pnpm tauri android build --apk --ci
+      - name: Build debug APK (no signing key configured)
+        if: ${{ steps.signing.outputs.enabled != 'true' }}
         run: pnpm tauri android build --debug --apk --ci
       - name: Collect APK
         shell: bash
+        env:
+          SIGNED: ${{ steps.signing.outputs.enabled }}
         run: |
           set -euo pipefail
           mkdir -p release-assets
@@ -338,9 +402,14 @@ jobs:
             echo "::error::no APK was produced"
             exit 1
           fi
-          for apk in "${apks[@]}"; do
-            cp "$apk" "release-assets/FlipClock-${VERSION}-android-$(basename "$apk")"
-          done
+          echo "apks: ${apks[*]}"
+          # 固定文件名，重跑同一 tag 时直接覆盖旧资产，不会累积多个 APK
+          cp "${apks[0]}" "release-assets/FlipClock-${VERSION}-android-universal.apk"
+          if [ "$SIGNED" = "true" ]; then
+            echo "::notice::APK was signed with the repository keystore (release build)."
+          else
+            echo "::warning::APK is a debug build because ANDROID_KEYSTORE_BASE64 is not configured."
+          fi
           ls -la release-assets
       - uses: actions/upload-artifact@v4
         with:
@@ -359,15 +428,40 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.plan.outputs.tag }}
+          # 生成发布正文需要完整历史与 tag（用于计算上一个版本）
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Compose release notes
+        shell: bash
+        env:
+          TAG: ${{ needs.plan.outputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # 正文每次都由 git 历史重新生成：同一个 tag 重跑发布得到完全一致的内容，
+          # 不会像 generate_release_notes 那样把上一轮的更新日志一段段追加上去。
+          prev="$(git describe --tags --abbrev=0 --match 'v*' "${TAG}^" 2>/dev/null || true)"
+          {
+            echo "## 更新内容 | What's changed"
+            echo
+            if [ -n "$prev" ]; then
+              git log -n 50 --no-merges --pretty='- %s (%h)' "${prev}..${TAG}" | grep -v 'chore(release)' || true
+              echo
+              echo "**Full Changelog**: https://github.com/${REPO}/compare/${prev}...${TAG}"
+            else
+              git log -n 50 --no-merges --pretty='- %s (%h)' "${TAG}" | grep -v 'chore(release)' || true
+              echo
+              echo "**Full Changelog**: https://github.com/${REPO}/commits/${TAG}"
+            fi
+          } > release-notes.md
+          cat release-notes.md
       - uses: actions/download-artifact@v4
         with:
           pattern: release-*
           merge-multiple: true
           path: release-assets
-          if-no-files-found: error
       - name: Generate updater manifest (latest.json)
         if: ${{ needs.plan.outputs.signing == 'true' }}
         run: node scripts/make-latest-json.mjs release-assets "${{ github.repository }}" "${{ needs.plan.outputs.tag }}"
@@ -387,6 +481,16 @@ jobs:
               missing=1
             fi
           }
+          any_of() {
+            local found=0 pattern
+            for pattern in "$@"; do
+              if compgen -G "release-assets/$pattern" > /dev/null; then found=1; break; fi
+            done
+            if [ "$found" -eq 0 ]; then
+              echo "::error::missing release asset: $*"
+              missing=1
+            fi
+          }
           require "*-setup.exe"
           require "*.msi"
           require "*-portable.exe"
@@ -395,20 +499,43 @@ jobs:
           require "*.AppImage"
           if [ "$SIGNING" = "true" ]; then
             require "*-setup.exe.sig"
-            require "*.AppImage.tar.gz"
-            require "*.AppImage.tar.gz.sig"
+            # Tauri v2 signs the AppImage in place; "v1Compatible" produces a tarball instead.
+            any_of "*.AppImage.sig" "*.AppImage.tar.gz.sig"
             require "latest.json"
           fi
           if [ "$missing" -ne 0 ]; then
             exit 1
           fi
           ls -la release-assets
+      - name: Remove stale release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.plan.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            echo "no existing release for $TAG"
+            exit 0
+          fi
+          # action-gh-release 只覆盖同名资产，改名或不再产出的旧资产必须显式删掉，
+          # 否则重跑同一个 tag 会一直往上堆文件。
+          while IFS= read -r name; do
+            [ -n "$name" ] || continue
+            if [ -f "release-assets/$name" ]; then
+              echo "keep   $name"
+            else
+              echo "delete $name"
+              gh release delete-asset "$TAG" "$name" -y
+            fi
+          done < <(gh release view "$TAG" --json assets -q '.assets[].name')
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.plan.outputs.tag }}
-          name: ${{ needs.plan.outputs.tag }}
-          generate_release_notes: true
+          name: ${{ needs.plan.outputs.display || needs.plan.outputs.tag }}
+          body_path: release-notes.md
+          generate_release_notes: false
           prerelease: ${{ contains(needs.plan.outputs.version, '-') }}
           files: release-assets/*
           fail_on_unmatched_files: true

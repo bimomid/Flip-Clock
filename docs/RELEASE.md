@@ -13,7 +13,7 @@
 | ------------- | ----------------------------------------------------------------------------- | -------------------------------------- |
 | 日常发版      | push 到 master，且包含 feat / fix / breaking 提交                             | 自动升版本、打 tag、构建并发布         |
 | 只有文档/杂项 | push 到 master，只有 chore / ci / refactor 等（纯 docs、markdown 推送不触发） | 只跑校验；脚本输出 `skip=true`，不发版 |
-| 热修 / 补发   | Actions → Release → Run workflow，填**已存在**的 tag（如 `v0.2.0`）           | 不升版本，直接构建该 tag 并发布        |
+| 热修 / 补发   | Actions → Release → Run workflow，填**已存在**的 tag（如 `v1.0.0`）           | 不升版本，直接构建该 tag 并发布        |
 | 推 tag        | push `v*` tag                                                                 | 同上（不升版本）                       |
 
 release 自己产生的提交是 `chore(release): X.Y.Z [skip release]`，workflow 会忽略它；
@@ -40,34 +40,57 @@ workflow 里用 `needs` 串起来）。
 
 | 平台    | 文件                                       | 说明                               |
 | ------- | ------------------------------------------ | ---------------------------------- |
-| Windows | `flip-clock_<ver>_x64-setup.exe`           | NSIS 安装包                        |
-| Windows | `flip-clock_<ver>_x64_en-US.msi`           | MSI 安装包                         |
+| Windows | `FlipClock_<ver>_x64-setup.exe`            | NSIS 安装包                        |
+| Windows | `FlipClock_<ver>_x64_en-US.msi`            | MSI 安装包                         |
 | Windows | `FlipClock-<ver>-windows-x64-portable.exe` | 便携版裸 exe                       |
 | Windows | `FlipClock-<ver>-windows-x64-portable.zip` | 便携版 zip                         |
-| Linux   | `flip-clock_<ver>_amd64.deb`               | deb 安装包                         |
-| Linux   | `flip-clock_<ver>_amd64.AppImage`          | AppImage                           |
-| Linux   | `flip-clock_<ver>_amd64.AppImage.tar.gz`   | updater 归档（配 `.sig`）          |
+| Linux   | `FlipClock_<ver>_amd64.deb`                | deb 安装包                         |
+| Linux   | `FlipClock_<ver>_amd64.AppImage`           | AppImage（updater 直接复用它）     |
+| Linux   | `FlipClock_<ver>_amd64.AppImage.sig`       | AppImage 签名（自动更新用）        |
 | Android | `FlipClock-<ver>-android-*.apk`            | 可选 job，失败不阻塞桌面发布       |
 | 通用    | `*.sig` / `latest.json`                    | 自动更新签名与清单（需要签名密钥） |
 
 `latest.json` 的 target 选择：
 
 - `windows-x86_64` → `*-setup.exe` + 同名 `.sig`
-- `linux-x86_64` → `*.AppImage.tar.gz` + 同名 `.sig`
+- `linux-x86_64` → `*.AppImage` + 同名 `.sig`（若配置为 `createUpdaterArtifacts: "v1Compatible"` 则回退到 `*.AppImage.tar.gz` + `.sig`）
+
+### Android 版本号
+
+`src-tauri/tauri.conf.json` 的 `bundle.android.autoIncrementVersionCode` 为 `false`，
+versionCode 由版本号公式推导：`major * 1000000 + minor * 1000 + patch`（1.0.0 → 1000000）。
+开启自动递增反而不可靠：它读取的 `src-tauri/gen/android/app/tauri.properties` 已被
+`.gitignore` 忽略，CI 每次全新 checkout 都读不到，会退化成恒等于 1。
 
 提交信息里的 emoji 不影响解析：`feat: :sparkles: xxx`、`feat: ✨ xxx` 都会被识别为 `feat`。
+
+## 发布正文与资产
+
+- 正文由 `release-notes.md` **重新生成**：列出上一个 tag 以来的非 release 提交，
+  末尾附 `Full Changelog` 链接；首个版本没有上一个 tag 时用 commits 链接。
+- 正文每次重建、`generate_release_notes` 已关闭，所以 workflow 重跑不会累积重复内容。
+- 发布前会删除上一轮留在 Release、本轮不再产出的旧资产（同名资产由上传覆盖），
+  重跑或改名不会把过期文件留在页面上。
+- `latest.json` 的 `notes` 优先取 `release-notes.md`，本机没有该文件时回退到 `package.json` 的 description。
 
 ## 仓库需要的配置
 
 ### Secrets
 
-| 名称                                 | 必填             | 说明                                   |
-| ------------------------------------ | ---------------- | -------------------------------------- |
-| `TAURI_SIGNING_PRIVATE_KEY`          | 要自动更新时必填 | `tauri signer generate` 生成的私钥内容 |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 否               | 私钥带密码时填写                       |
+| 名称                                 | 必填              | 说明                                   |
+| ------------------------------------ | ----------------- | -------------------------------------- |
+| `TAURI_SIGNING_PRIVATE_KEY`          | 要自动更新时必填  | `tauri signer generate` 生成的私钥内容 |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 否                | 私钥带密码时填写                       |
+| `ANDROID_KEYSTORE_BASE64`            | 要签名 APK 时必填 | `release.keystore` 的 base64 内容      |
+| `ANDROID_KEYSTORE_PASSWORD`          | 同上              | keystore 密码                          |
+| `ANDROID_KEY_ALIAS`                  | 同上              | 密钥别名（本仓库为 `release`）         |
+| `ANDROID_KEY_PASSWORD`               | 同上              | 密钥密码                               |
 
 缺少私钥时不会产出坏掉的 `latest.json`：构建会跳过 updater 产物、不生成 `latest.json`，
 并在 workflow 里输出 warning，Release 里只有安装包和便携版，自动更新暂时失效。
+
+**Android 签名**：配齐上面 4 个 `ANDROID_*` 变量后，CI 会用 keystore 构建**签名的 release APK**；
+缺任意一个则退化为 debug APK（不影响发版，只是体积大且不能上架）。keystore 与口令同样只存在 hide 分支。
 
 **私钥存放位置**：仓库 `master` 分支**不含**私钥（`src-tauri/signing/` 已在 .gitignore 中忽略）。
 私钥与口令记录在本地 `hide` 分支的 `src-tauri/signing/` 与 `Hide.md` 中，需要发版时再把
@@ -89,6 +112,7 @@ pnpm release:plan         # 只打印将要升的版本，不写文件
 node scripts/bump-version.mjs --dry-run --json
 pnpm check                # 格式 / lint / 类型
 pnpm test
+cargo test --lib --manifest-path src-tauri/Cargo.toml   # 更新检查的超时与解析
 ```
 
 ## 常见问题
@@ -99,5 +123,8 @@ pnpm test
 - **没有 latest.json / .sig**：签名密钥没配，检查 `TAURI_SIGNING_PRIVATE_KEY`。
 - **版本不一致**：`pnpm version:check` 会列出文件；用 `pnpm version:sync <ver>` 修复。
 - **Windows 便携版打不开**：依赖系统 WebView2 运行时（Win10/11 通常自带）。
-- **Android 是 debug APK**：CI 未配置正式签名；如需 release 签名，自行配置 keystore 后
-  扩展 `build-android` job。
+- **Android 装完是 debug APK**：`ANDROID_*` 四个 Secrets 没配齐，CI 只能出 debug 包；
+  配齐后走签名的 release APK（见上文「Android 签名」）。
+- **Android 检查更新失败或超时**：手机网络常把 `github.com` / `api.github.com` 解析到不可达地址。
+  App 会先试 GitHub API（`releases/latest`）、再试 `latest.json`，连接超时 6s、单次请求 10s，
+  前端 25s 兜底，必定给出结果（超时提示 + 「前往下载」按钮），不会一直转圈。

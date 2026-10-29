@@ -3,6 +3,9 @@ name: CI
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
   pull_request:
   workflow_dispatch:
 
@@ -70,6 +73,9 @@ jobs:
 
       - name: Clippy
         run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --lib --manifest-path src-tauri/Cargo.toml
 
   desktop-build:
     name: Build smoke (${{ matrix.name }})
