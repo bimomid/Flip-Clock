@@ -61,13 +61,20 @@ workflow 里用 `needs` 串起来）。
 
 ### Secrets
 
-| 名称                                 | 必填             | 说明                                   |
-| ------------------------------------ | ---------------- | -------------------------------------- |
-| `TAURI_SIGNING_PRIVATE_KEY`          | 要自动更新时必填 | `tauri signer generate` 生成的私钥内容 |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 否               | 私钥带密码时填写                       |
+| 名称                                 | 必填              | 说明                                   |
+| ------------------------------------ | ----------------- | -------------------------------------- |
+| `TAURI_SIGNING_PRIVATE_KEY`          | 要自动更新时必填  | `tauri signer generate` 生成的私钥内容 |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 否                | 私钥带密码时填写                       |
+| `ANDROID_KEYSTORE_BASE64`            | 要签名 APK 时必填 | `release.keystore` 的 base64 内容      |
+| `ANDROID_KEYSTORE_PASSWORD`          | 同上              | keystore 密码                          |
+| `ANDROID_KEY_ALIAS`                  | 同上              | 密钥别名（本仓库为 `release`）         |
+| `ANDROID_KEY_PASSWORD`               | 同上              | 密钥密码                               |
 
 缺少私钥时不会产出坏掉的 `latest.json`：构建会跳过 updater 产物、不生成 `latest.json`，
 并在 workflow 里输出 warning，Release 里只有安装包和便携版，自动更新暂时失效。
+
+**Android 签名**：配齐上面 4 个 `ANDROID_*` 变量后，CI 会用 keystore 构建**签名的 release APK**；
+缺任意一个则退化为 debug APK（不影响发版，只是体积大且不能上架）。keystore 与口令同样只存在 hide 分支。
 
 **私钥存放位置**：仓库 `master` 分支**不含**私钥（`src-tauri/signing/` 已在 .gitignore 中忽略）。
 私钥与口令记录在本地 `hide` 分支的 `src-tauri/signing/` 与 `Hide.md` 中，需要发版时再把

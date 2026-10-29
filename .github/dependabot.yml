@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     commit-message:
       prefix: chore
       include: scope
@@ -13,16 +13,17 @@ updates:
       npm-minor-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    # 大版本一律手动评估：升级前先看迁移说明，避免破坏性变更直接进主分支
     ignore:
-      - dependency-name: vue-i18n
-        update-types: [version-update:semver-major]
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: cargo
     directory: /src-tauri
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     commit-message:
       prefix: chore
       include: scope
@@ -30,14 +31,22 @@ updates:
       cargo-minor-patch:
         patterns: ["*"]
         update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
+    open-pull-requests-limit: 3
     commit-message:
       prefix: ci
     groups:
-      actions:
+      actions-minor-patch:
         patterns: ["*"]
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

@@ -356,10 +356,42 @@ jobs:
           sdkmanager "ndk;27.2.12479018" "platforms;android-36" "build-tools;35.0.0"
           echo "NDK_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT}}/ndk/27.2.12479018" >> "$GITHUB_ENV"
       - run: pnpm install --frozen-lockfile
-      - name: Build debug APK
+      - name: Prepare Android release signing
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ANDROID_KEYSTORE_BASE64 is not configured; falling back to a debug-signed APK."
+            exit 0
+          fi
+          keystore=src-tauri/gen/android/release.keystore
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
+          chmod 600 "$keystore"
+          {
+            echo "storeFile=../release.keystore"
+            echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}"
+            echo "keyAlias=${ANDROID_KEY_ALIAS}"
+            echo "keyPassword=${ANDROID_KEY_PASSWORD}"
+          } > src-tauri/gen/android/keystore.properties
+          chmod 600 src-tauri/gen/android/keystore.properties
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+      - name: Build signed release APK
+        if: ${{ steps.signing.outputs.enabled == 'true' }}
+        run: pnpm tauri android build --apk --ci
+      - name: Build debug APK (no signing key configured)
+        if: ${{ steps.signing.outputs.enabled != 'true' }}
         run: pnpm tauri android build --debug --apk --ci
       - name: Collect APK
         shell: bash
+        env:
+          SIGNED: ${{ steps.signing.outputs.enabled }}
         run: |
           set -euo pipefail
           mkdir -p release-assets
@@ -368,9 +400,14 @@ jobs:
             echo "::error::no APK was produced"
             exit 1
           fi
-          for apk in "${apks[@]}"; do
-            cp "$apk" "release-assets/FlipClock-${VERSION}-android-$(basename "$apk")"
-          done
+          echo "apks: ${apks[*]}"
+          # 固定文件名，重跑同一 tag 时直接覆盖旧资产，不会累积多个 APK
+          cp "${apks[0]}" "release-assets/FlipClock-${VERSION}-android-universal.apk"
+          if [ "$SIGNED" = "true" ]; then
+            echo "::notice::APK was signed with the repository keystore (release build)."
+          else
+            echo "::warning::APK is a debug build because ANDROID_KEYSTORE_BASE64 is not configured."
+          fi
           ls -la release-assets
       - uses: actions/upload-artifact@v4
         with:
