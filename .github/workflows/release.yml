@@ -397,7 +397,6 @@ jobs:
           pattern: release-*
           merge-multiple: true
           path: release-assets
-          if-no-files-found: error
       - name: Generate updater manifest (latest.json)
         if: ${{ needs.plan.outputs.signing == 'true' }}
         run: node scripts/make-latest-json.mjs release-assets "${{ github.repository }}" "${{ needs.plan.outputs.tag }}"
@@ -417,6 +416,16 @@ jobs:
               missing=1
             fi
           }
+          any_of() {
+            local found=0 pattern
+            for pattern in "$@"; do
+              if compgen -G "release-assets/$pattern" > /dev/null; then found=1; break; fi
+            done
+            if [ "$found" -eq 0 ]; then
+              echo "::error::missing release asset: $*"
+              missing=1
+            fi
+          }
           require "*-setup.exe"
           require "*.msi"
           require "*-portable.exe"
@@ -425,8 +434,8 @@ jobs:
           require "*.AppImage"
           if [ "$SIGNING" = "true" ]; then
             require "*-setup.exe.sig"
-            require "*.AppImage.tar.gz"
-            require "*.AppImage.tar.gz.sig"
+            # Tauri v2 signs the AppImage in place; "v1Compatible" produces a tarball instead.
+            any_of "*.AppImage.sig" "*.AppImage.tar.gz.sig"
             require "latest.json"
           fi
           if [ "$missing" -ne 0 ]; then
